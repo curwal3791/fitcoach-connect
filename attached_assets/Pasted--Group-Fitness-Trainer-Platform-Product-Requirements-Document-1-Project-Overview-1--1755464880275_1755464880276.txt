@@ -1,0 +1,388 @@
+# Group Fitness Trainer Platform - Product Requirements Document
+
+## 1. Project Overview
+
+### 1.1 Vision Statement
+A comprehensive web application that empowers group fitness trainers to create, organize, and deliver structured workout routines with seamless music integration and professional presentation capabilities.
+
+### 1.2 Core Value Proposition
+- Streamlined routine creation and management
+- Professional presentation mode for classes
+- Music-synchronized workout delivery
+- Shareable calendar and routine library
+- Community-driven content sharing
+
+## 2. User Personas
+
+### 2.1 Primary User: Group Fitness Trainer
+- **Demographics**: Fitness professionals, studio owners, independent trainers
+- **Goals**: Create engaging classes, organize schedules, deliver professional presentations
+- **Pain Points**: Manual routine planning, music coordination, class organization
+- **Technical Comfort**: Moderate to high
+
+## 3. Core Features & Requirements
+
+### 3.1 Authentication & User Management
+**User Stories:**
+- As a trainer, I want to create an account so I can access the platform
+- As a trainer, I want to log in securely so my data is protected
+- As a trainer, I want to manage my profile information
+
+**Technical Requirements:**
+- Email/password authentication
+- Secure session management
+- Password reset functionality
+- Profile management (name, bio, photo, contact info)
+- Email verification for new accounts
+
+### 3.2 Class Type Management
+**User Stories:**
+- As a trainer, I want to create custom class types so I can organize my offerings
+- As a trainer, I want to select from common class types so I can get started quickly
+- As a trainer, I want to edit class types so I can refine my categories
+
+**Technical Requirements:**
+- Pre-populated class types: HIIT, Yoga, Cycling, Strength Training, Cardio, Pilates, Zumba, CrossFit, Barre, Kickboxing
+- Custom class type creation
+- Class type editing and deletion
+- Class type categorization and tagging
+
+### 3.3 Exercise Database & Management
+**User Stories:**
+- As a trainer, I want to browse a comprehensive exercise library so I can quickly find movements
+- As a trainer, I want to create custom exercises so I can add specialized movements
+- As a trainer, I want to attach media to exercises so I can provide clear demonstrations
+
+**Technical Requirements:**
+
+**Pre-populated Exercise Database with fields:**
+- Exercise name
+- Description/instructions
+- Difficulty level (Beginner, Intermediate, Advanced)
+- Equipment needed
+- Primary muscle groups
+- Secondary muscle groups
+- Exercise category (strength, cardio, flexibility, balance)
+- Estimated calories burned per minute
+- Modification suggestions
+- Safety notes/contraindications
+
+**Custom Exercise Creation:**
+- All above fields customizable
+- Video upload capability (MP4, max 50MB)
+- Image upload capability (JPG, PNG, max 10MB)
+- Exercise sharing permissions (private, community)
+
+**Exercise Library Features:**
+- Search and filter functionality
+- Favorite exercises
+- Recently used exercises
+- Category browsing
+
+### 3.4 Calendar & Scheduling
+**User Stories:**
+- As a trainer, I want to view my schedule in a calendar format so I can plan my classes
+- As a trainer, I want to add recurring classes so I don't have to manually schedule each session
+- As a trainer, I want to assign routines to specific class sessions
+
+**Technical Requirements:**
+- Monthly/weekly calendar view
+- Click-to-add class sessions
+- Recurring class scheduling (daily, weekly, monthly patterns)
+- Class session details: date, time, class type, location, notes
+- Routine assignment to calendar events
+- Calendar sharing via public link
+- Export calendar to external calendar apps (iCal format)
+- Drag-and-drop event management
+
+### 3.5 Routine Creation & Management
+**User Stories:**
+- As a trainer, I want to create routines by selecting exercises so I can structure my classes
+- As a trainer, I want to set duration and reps for each exercise so I can control pacing
+- As a trainer, I want to reorder exercises so I can optimize workout flow
+- As a trainer, I want to assign music to exercises so I can synchronize the experience
+
+**Technical Requirements:**
+
+**Routine Builder Interface:**
+- Modal/page for routine creation
+- Exercise search and selection
+- Drag-and-drop exercise reordering
+- Remove/delete exercises from routine
+- Exercise timing configuration:
+  - Duration (seconds/minutes)
+  - Repetitions
+  - Sets
+  - Rest periods between exercises
+
+**Music Integration:**
+- Song/playlist assignment per exercise
+- Song title and artist fields
+- BPM notation (for future BPM matching)
+- Music column that can span multiple exercise rows
+- Notes field for music cues
+
+**Routine Management:**
+- Save routines with custom names
+- Duplicate existing routines
+- Routine templates
+- Routine sharing (private/community)
+- Routine categories and tags
+- Search saved routines
+
+### 3.6 Presentation & Print Mode
+**User Stories:**
+- As a trainer, I want to display my routine on a large screen so my class can follow along
+- As a trainer, I want to control the presentation during class so I can adapt in real-time
+- As a trainer, I want to see upcoming exercises so I can prepare transitions
+- As a trainer, I want to print my routines so I can use them in studios without projection capabilities
+- As a trainer, I want to generate clean, professional printouts for backup or client reference
+
+**Technical Requirements:**
+
+**Digital Presentation Mode:**
+- Full-screen presentation mode
+- Current exercise display with:
+  - Exercise name and description
+  - Remaining time/reps
+  - Visual exercise demonstration (image/video)
+  - Current music information
+- Upcoming exercises sidebar
+- Presentation controls:
+  - Play/pause timer
+  - Skip to next exercise
+  - Skip to previous exercise
+  - Extend current exercise time
+  - Emergency stop
+- Timer and progress indicators
+- Keyboard shortcuts for easy control
+- Auto-advance to next exercise
+- End-of-routine summary
+
+**Print Mode:**
+- Print-optimized layout with clean typography
+- Condensed routine overview showing:
+  - Exercise name and brief description
+  - Duration/reps/sets for each exercise
+  - Rest periods
+  - Music assignments
+  - Exercise order numbering
+- Option to include exercise images (checkbox toggle)
+- Page break optimization for multi-page routines
+- Print preview functionality
+- Export to PDF option
+- Header with routine name, date, trainer name
+- Footer with page numbers and total routine time
+
+### 3.7 Community Features
+**User Stories:**
+- As a trainer, I want to browse routines from other trainers so I can find inspiration
+- As a trainer, I want to share my routines with the community so I can contribute
+- As a trainer, I want to save routines from other trainers so I can use them later
+
+**Technical Requirements:**
+- Community routine library
+- Routine sharing permissions
+- Browse routines by class type, difficulty, duration
+- Copy community routines to personal library
+- Attribution tracking for shared routines
+- Basic search and filter functionality
+
+## 4. Technical Architecture
+
+### 4.1 Technology Stack Recommendations
+- **Frontend**: React.js with responsive design
+- **Backend**: Node.js with Express.js
+- **Database**: PostgreSQL (recommended) or SQLite for development
+- **Authentication**: JWT tokens with bcrypt password hashing
+- **File Storage**: Cloud storage for media files (images/videos)
+- **Calendar**: FullCalendar.js or similar library
+
+### 4.2 Database Schema (Core Tables)
+
+```sql
+-- Users
+users (id, email, password_hash, first_name, last_name, bio, profile_image, created_at, updated_at)
+
+-- Class Types
+class_types (id, name, description, is_default, created_by_user_id, created_at)
+
+-- Exercises
+exercises (id, name, description, difficulty_level, equipment_needed, primary_muscles, secondary_muscles, category, calories_per_minute, modifications, safety_notes, image_url, video_url, created_by_user_id, is_public, created_at)
+
+-- Routines
+routines (id, name, description, class_type_id, created_by_user_id, is_public, total_duration, created_at, updated_at)
+
+-- Routine Exercises (junction table)
+routine_exercises (id, routine_id, exercise_id, order_index, duration_seconds, repetitions, sets, rest_seconds, music_title, music_artist, music_bpm, notes)
+
+-- Calendar Events
+calendar_events (id, user_id, class_type_id, routine_id, title, start_datetime, end_datetime, location, notes, is_recurring, recurrence_pattern, created_at)
+
+-- User Saved Routines
+user_saved_routines (id, user_id, routine_id, saved_at)
+```
+
+### 4.3 API Endpoints (Core Routes)
+
+```
+Authentication:
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/logout
+POST /api/auth/forgot-password
+
+Users:
+GET /api/users/profile
+PUT /api/users/profile
+POST /api/users/upload-avatar
+
+Class Types:
+GET /api/class-types
+POST /api/class-types
+PUT /api/class-types/:id
+DELETE /api/class-types/:id
+
+Exercises:
+GET /api/exercises
+GET /api/exercises/search
+POST /api/exercises
+PUT /api/exercises/:id
+DELETE /api/exercises/:id
+POST /api/exercises/:id/media
+
+Routines:
+GET /api/routines
+GET /api/routines/:id
+GET /api/routines/:id/print
+POST /api/routines
+PUT /api/routines/:id
+DELETE /api/routines/:id
+POST /api/routines/:id/duplicate
+GET /api/routines/:id/pdf
+
+Calendar:
+GET /api/calendar/events
+POST /api/calendar/events
+PUT /api/calendar/events/:id
+DELETE /api/calendar/events/:id
+
+Community:
+GET /api/community/routines
+POST /api/routines/:id/share
+POST /api/routines/:id/save
+```
+
+## 5. User Interface Requirements
+
+### 5.1 Responsive Design
+- Mobile-first approach
+- Breakpoints: Mobile (320px+), Tablet (768px+), Desktop (1024px+)
+- Touch-friendly interface elements
+- Optimized for both portrait and landscape orientations
+
+### 5.2 Key User Interfaces
+
+**Dashboard:**
+- Quick stats (total routines, upcoming classes)
+- Recent routines
+- Calendar overview
+- Quick action buttons
+
+**Routine Builder:**
+- Split-screen: exercise library on left, routine builder on right
+- Drag-and-drop interface
+- Exercise removal/deletion buttons
+- Inline editing for timing and music
+- Real-time duration calculation
+- Print preview option
+
+**Print Layout:**
+- Clean, professional typography
+- Tabular format for easy scanning
+- Optional exercise images
+- Proper page breaks and headers
+
+**Calendar View:**
+- Month/week view toggle
+- Color-coded class types
+- Quick add functionality
+- Event detail popovers
+
+**Presentation Mode:**
+- Clean, high-contrast design
+- Large, readable fonts
+- Minimal distractions
+- Clear visual hierarchy
+
+## 6. Performance Requirements
+
+- Page load times under 3 seconds
+- Smooth drag-and-drop interactions
+- Responsive media playback
+- Efficient database queries with proper indexing
+- Image/video optimization and compression
+
+## 7. Security Requirements
+
+- HTTPS encryption for all communications
+- Secure password storage (bcrypt hashing)
+- JWT token authentication with refresh tokens
+- Input validation and sanitization
+- File upload security (type validation, size limits)
+- Rate limiting for API endpoints
+
+## 8. Implementation Phases
+
+### Phase 1: Core Foundation (Weeks 1-3)
+- User authentication and profiles
+- Basic dashboard
+- Class type management
+- Basic exercise database with pre-populated content
+
+### Phase 2: Routine Management (Weeks 4-6)
+- Routine builder with drag-and-drop
+- Exercise timing and music assignment
+- Routine saving and management
+- Calendar integration
+
+### Phase 3: Presentation, Print & Polish (Weeks 7-8)
+- Digital presentation mode development
+- Print functionality and PDF export
+- Mobile responsiveness optimization
+- Performance optimization
+- Bug fixes and testing
+
+### Phase 4: Community Features (Weeks 9-10)
+- Community routine sharing
+- Calendar sharing functionality
+- Final testing and deployment preparation
+
+## 9. Success Metrics
+
+- User registration and retention rates
+- Average routines created per user
+- Time spent in presentation mode
+- Community routine sharing engagement
+- Mobile usage statistics
+
+## 10. Future Enhancements (Post-Launch)
+
+- Subscription tier implementation
+- Routine marketplace
+- BPM matching and music speed adjustment
+- Mobile companion app
+- Integration with fitness tracking devices
+- Advanced analytics and reporting
+- Video streaming capabilities
+- AI-powered routine recommendations
+
+---
+
+## Development Notes for Replit
+
+1. **Database Setup**: Initialize with pre-populated exercise data for common fitness movements
+2. **Media Handling**: Implement cloud storage for user-uploaded images and videos
+3. **Real-time Updates**: Consider WebSocket implementation for live presentation mode updates
+4. **Testing Strategy**: Include unit tests for core business logic and API endpoints
+5. **Documentation**: Maintain API documentation for future development and integrations
