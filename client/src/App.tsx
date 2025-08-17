@@ -1,0 +1,80 @@
+import { useState } from "react";
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
+import Navigation from "@/components/navigation";
+import Landing from "@/pages/landing";
+import Dashboard from "@/pages/dashboard";
+import Routines from "@/pages/routines";
+import Exercises from "@/pages/exercises";
+import Calendar from "@/pages/calendar";
+import Presentation from "@/pages/presentation";
+import NotFound from "@/pages/not-found";
+
+function AuthenticatedApp() {
+  const [currentTab, setCurrentTab] = useState("dashboard");
+
+  const renderCurrentView = () => {
+    switch (currentTab) {
+      case "dashboard":
+        return <Dashboard />;
+      case "routines":
+        return <Routines />;
+      case "exercises":
+        return <Exercises />;
+      case "calendar":
+        return <Calendar />;
+      case "presentation":
+        return <Presentation />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navigation currentTab={currentTab} onTabChange={setCurrentTab} />
+      <main>
+        {renderCurrentView()}
+      </main>
+    </div>
+  );
+}
+
+function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  return (
+    <Switch>
+      {isLoading || !isAuthenticated ? (
+        <Route path="/" component={Landing} />
+      ) : (
+        <>
+          <Route path="/" component={AuthenticatedApp} />
+          <Route path="/dashboard" component={AuthenticatedApp} />
+          <Route path="/routines" component={AuthenticatedApp} />
+          <Route path="/exercises" component={AuthenticatedApp} />
+          <Route path="/calendar" component={AuthenticatedApp} />
+          <Route path="/presentation" component={AuthenticatedApp} />
+        </>
+      )}
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
