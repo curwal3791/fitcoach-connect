@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -53,7 +53,7 @@ export default function Classes() {
   // Create class type mutation
   const createClassType = useMutation({
     mutationFn: async (data: ClassTypeFormData) => {
-      return await apiRequest("/api/class-types", "POST", data);
+      return await apiRequest("POST", "/api/class-types", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/class-types"] });
@@ -87,7 +87,7 @@ export default function Classes() {
   // Update class type mutation
   const updateClassType = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ClassTypeFormData> }) => {
-      return await apiRequest(`/api/class-types/${id}`, "PATCH", data);
+      return await apiRequest("PATCH", `/api/class-types/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/class-types"] });
@@ -121,7 +121,7 @@ export default function Classes() {
   // Delete class type mutation
   const deleteClassType = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/class-types/${id}`, "DELETE");
+      return await apiRequest("DELETE", `/api/class-types/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/class-types"] });
@@ -224,6 +224,12 @@ export default function Classes() {
               <DialogTitle data-testid="text-dialog-title">
                 {editingClass ? "Edit Class Type" : "Create New Class Type"}
               </DialogTitle>
+              <DialogDescription>
+                {editingClass 
+                  ? "Update the details of your class type." 
+                  : "Create a new class type to organize your routines."
+                }
+              </DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
