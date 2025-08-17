@@ -40,12 +40,12 @@ export default function Classes() {
     resolver: zodResolver(classTypeFormSchema),
     defaultValues: {
       name: "",
-      description: "",
+      description: null,
     },
   });
 
   // Fetch class types
-  const { data: classTypes = [], isLoading } = useQuery({
+  const { data: classTypes = [], isLoading } = useQuery<ClassType[]>({
     queryKey: ["/api/class-types"],
     retry: false,
   });
@@ -53,10 +53,7 @@ export default function Classes() {
   // Create class type mutation
   const createClassType = useMutation({
     mutationFn: async (data: ClassTypeFormData) => {
-      return await apiRequest("/api/class-types", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("/api/class-types", "POST", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/class-types"] });
@@ -90,10 +87,7 @@ export default function Classes() {
   // Update class type mutation
   const updateClassType = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ClassTypeFormData> }) => {
-      return await apiRequest(`/api/class-types/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest(`/api/class-types/${id}`, "PATCH", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/class-types"] });
@@ -127,9 +121,7 @@ export default function Classes() {
   // Delete class type mutation
   const deleteClassType = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/class-types/${id}`, {
-        method: "DELETE",
-      });
+      return await apiRequest(`/api/class-types/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/class-types"] });
@@ -170,7 +162,7 @@ export default function Classes() {
     setEditingClass(classType);
     form.reset({
       name: classType.name,
-      description: classType.description || "",
+      description: classType.description || null,
     });
   };
 
