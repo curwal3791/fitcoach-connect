@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/navigation";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
+import Classes from "@/pages/classes";
 import Routines from "@/pages/routines";
 import Exercises from "@/pages/exercises";
 import Calendar from "@/pages/calendar";
@@ -21,6 +22,8 @@ function AuthenticatedApp() {
     switch (currentTab) {
       case "dashboard":
         return <Dashboard />;
+      case "classes":
+        return <Classes />;
       case "routines":
         return <Routines />;
       case "exercises":
@@ -55,6 +58,7 @@ function Router() {
         <>
           <Route path="/" component={AuthenticatedApp} />
           <Route path="/dashboard" component={AuthenticatedApp} />
+          <Route path="/classes" component={AuthenticatedApp} />
           <Route path="/routines" component={AuthenticatedApp} />
           <Route path="/exercises" component={AuthenticatedApp} />
           <Route path="/calendar" component={AuthenticatedApp} />

@@ -17,6 +17,7 @@ interface NavigationProps {
 
 const navigation = [
   { id: 'dashboard', name: 'Dashboard', icon: null },
+  { id: 'classes', name: 'Classes', icon: null },
   { id: 'routines', name: 'Routines', icon: null },
   { id: 'exercises', name: 'Exercises', icon: null },
   { id: 'calendar', name: 'Calendar', icon: null },

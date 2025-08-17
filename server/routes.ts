@@ -66,7 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/class-types/:id', isAuthenticated, async (req, res) => {
+  app.patch('/api/class-types/:id', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const data = insertClassTypeSchema.partial().parse(req.body);
