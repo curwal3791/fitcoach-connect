@@ -15,10 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Users, Calendar, Dumbbell, Zap } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Calendar, Dumbbell, Zap, ArrowLeft } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertClassTypeSchema, type ClassType, type InsertClassType } from "@shared/schema";
+import { insertClassTypeSchema, insertRoutineSchema, type ClassType, type InsertClassType, type Routine } from "@shared/schema";
 import { z } from "zod";
 
 const classTypeFormSchema = insertClassTypeSchema.omit({ 
@@ -28,13 +28,25 @@ const classTypeFormSchema = insertClassTypeSchema.omit({
   isDefault: true 
 });
 
+const routineFormSchema = insertRoutineSchema.omit({
+  id: true,
+  createdByUserId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Routine name is required"),
+});
+
 type ClassTypeFormData = z.infer<typeof classTypeFormSchema>;
+type RoutineFormData = z.infer<typeof routineFormSchema>;
 
 export default function Classes() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassType | null>(null);
+  const [selectedClass, setSelectedClass] = useState<ClassType | null>(null);
+  const [isCreateRoutineDialogOpen, setIsCreateRoutineDialogOpen] = useState(false);
 
   const form = useForm<ClassTypeFormData>({
     resolver: zodResolver(classTypeFormSchema),
@@ -44,10 +56,27 @@ export default function Classes() {
     },
   });
 
+  const routineForm = useForm<RoutineFormData>({
+    resolver: zodResolver(routineFormSchema),
+    defaultValues: {
+      name: "",
+      description: null,
+      classTypeId: "",
+      isPublic: false,
+    },
+  });
+
   // Fetch class types
   const { data: classTypes = [], isLoading } = useQuery<ClassType[]>({
     queryKey: ["/api/class-types"],
     retry: false,
+  });
+
+  // Fetch routines for selected class
+  const { data: classRoutines = [], isLoading: routinesLoading } = useQuery<(Routine & { exerciseCount: number })[]>({
+    queryKey: ["/api/routines"],
+    enabled: !!selectedClass,
+    select: (data) => selectedClass ? data.filter(routine => routine.classTypeId === selectedClass.id) : [],
   });
 
   // Create class type mutation
@@ -150,6 +179,40 @@ export default function Classes() {
     },
   });
 
+  // Create routine mutation
+  const createRoutine = useMutation({
+    mutationFn: async (data: RoutineFormData) => {
+      return await apiRequest("POST", "/api/routines", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/routines"] });
+      setIsCreateRoutineDialogOpen(false);
+      routineForm.reset();
+      toast({
+        title: "Success",
+        description: "Routine created successfully!",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to create routine. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: ClassTypeFormData) => {
     if (editingClass) {
       updateClassType.mutate({ id: editingClass.id, data });
@@ -176,6 +239,18 @@ export default function Classes() {
     form.reset();
   };
 
+  const onRoutineSubmit = (data: RoutineFormData) => {
+    createRoutine.mutate({
+      ...data,
+      classTypeId: selectedClass?.id || "",
+    });
+  };
+
+  const handleCloseRoutineDialog = () => {
+    setIsCreateRoutineDialogOpen(false);
+    routineForm.reset();
+  };
+
   const getClassIcon = (className: string) => {
     const name = className.toLowerCase();
     if (name.includes('hiit') || name.includes('cardio')) return <Zap className="w-5 h-5" />;
@@ -192,6 +267,150 @@ export default function Classes() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-2 text-sm text-muted-foreground">Loading classes...</p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If a class is selected, show class detail view
+  if (selectedClass) {
+    return (
+      <div className="p-6 space-y-6" data-testid="class-detail-page">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              onClick={() => setSelectedClass(null)}
+              className="flex items-center gap-2"
+              data-testid="button-back-to-classes"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Classes
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900" data-testid={`text-class-name-${selectedClass.id}`}>
+                {selectedClass.name}
+              </h1>
+              {selectedClass.description && (
+                <p className="text-gray-600 mt-1">{selectedClass.description}</p>
+              )}
+            </div>
+          </div>
+          <Dialog open={isCreateRoutineDialogOpen} onOpenChange={setIsCreateRoutineDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2" data-testid="button-add-routine-to-class">
+                <Plus className="w-4 h-4" />
+                Add New Routine
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Add Routine to {selectedClass.name}</DialogTitle>
+                <DialogDescription>
+                  Create a new workout routine for this class type.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...routineForm}>
+                <form onSubmit={routineForm.handleSubmit(onRoutineSubmit)} className="space-y-4">
+                  <FormField
+                    control={routineForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Routine Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter routine name" {...field} data-testid="input-routine-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={routineForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe your routine..." 
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-routine-description"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleCloseRoutineDialog}
+                      data-testid="button-cancel-routine"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={createRoutine.isPending}
+                      data-testid="button-create-routine"
+                    >
+                      {createRoutine.isPending ? "Creating..." : "Create Routine"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Routines for this class */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Routines for {selectedClass.name}</h2>
+          {routinesLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-48 bg-gray-200 animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : classRoutines.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {classRoutines.map((routine) => (
+                <Card 
+                  key={routine.id} 
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  data-testid={`routine-card-${routine.id}`}
+                >
+                  <CardHeader>
+                    <CardTitle className="text-lg" data-testid={`routine-title-${routine.id}`}>
+                      {routine.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {routine.description && (
+                      <p className="text-gray-600 text-sm mb-4">{routine.description}</p>
+                    )}
+                    <div className="flex justify-between items-center text-sm text-gray-500">
+                      <span>{routine.exerciseCount || 0} exercises</span>
+                      <span>{Math.round((routine.totalDuration || 0) / 60)} min</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12" data-testid="text-no-routines-for-class">
+              <div className="text-gray-500">
+                <Dumbbell className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg">No routines yet for {selectedClass.name}</p>
+                <p className="text-sm">Create your first routine for this class!</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -317,7 +536,7 @@ export default function Classes() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {classTypes.map((classType: ClassType) => (
-            <Card key={classType.id} className="hover:shadow-md transition-shadow">
+            <Card key={classType.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedClass(classType)} data-testid={`card-class-${classType.id}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -335,11 +554,14 @@ export default function Classes() {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleEdit(classType)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(classType);
+                      }}
                       data-testid={`button-edit-class-${classType.id}`}
                     >
                       <Edit className="w-4 h-4" />
@@ -350,6 +572,7 @@ export default function Classes() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={(e) => e.stopPropagation()}
                             data-testid={`button-delete-class-${classType.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
