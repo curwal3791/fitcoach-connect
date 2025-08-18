@@ -34,6 +34,7 @@ export interface IStorage {
   createClassType(classType: InsertClassType): Promise<ClassType>;
   updateClassType(id: string, classType: Partial<InsertClassType>): Promise<ClassType>;
   deleteClassType(id: string): Promise<void>;
+  createDefaultExercisesForClass(classType: ClassType, userId: string): Promise<void>;
 
   // Exercise operations
   getExercises(filters?: {
@@ -142,6 +143,209 @@ export class DatabaseStorage implements IStorage {
 
   async deleteClassType(id: string): Promise<void> {
     await db.delete(classTypes).where(eq(classTypes.id, id));
+  }
+
+  async createDefaultExercisesForClass(classType: ClassType, userId: string): Promise<void> {
+    const defaultExercises = this.getDefaultExercisesForClassType(classType.name);
+    
+    for (const exercise of defaultExercises) {
+      await this.createExercise({
+        ...exercise,
+        createdByUserId: userId,
+        isPublic: true,
+      });
+    }
+  }
+
+  private getDefaultExercisesForClassType(className: string): Omit<InsertExercise, 'createdByUserId' | 'isPublic'>[] {
+    const name = className.toLowerCase();
+    
+    if (name.includes('hiit') || name.includes('cardio')) {
+      return [
+        {
+          name: "Jumping Jacks",
+          description: "Full-body cardio exercise that increases heart rate and burns calories",
+          difficultyLevel: "Beginner",
+          equipmentNeeded: "None",
+          primaryMuscles: "Full body",
+          secondaryMuscles: "Core",
+          category: "cardio",
+          caloriesPerMinute: 8,
+          modifications: "Step touch for low impact",
+          safetyNotes: "Land softly on balls of feet"
+        },
+        {
+          name: "Burpees",
+          description: "High-intensity full-body exercise combining squat, plank, and jump",
+          difficultyLevel: "Advanced",
+          equipmentNeeded: "None",
+          primaryMuscles: "Full body",
+          secondaryMuscles: "Core, shoulders",
+          category: "cardio",
+          caloriesPerMinute: 12,
+          modifications: "Remove jump or push-up",
+          safetyNotes: "Maintain proper form throughout"
+        },
+        {
+          name: "High Knees",
+          description: "Running in place while lifting knees to waist level",
+          difficultyLevel: "Intermediate",
+          equipmentNeeded: "None",
+          primaryMuscles: "Legs, core",
+          secondaryMuscles: "Glutes",
+          category: "cardio",
+          caloriesPerMinute: 10,
+          modifications: "March in place for lower intensity",
+          safetyNotes: "Keep core engaged"
+        },
+        {
+          name: "Mountain Climbers",
+          description: "Plank position with alternating knee drives",
+          difficultyLevel: "Intermediate",
+          equipmentNeeded: "None",
+          primaryMuscles: "Core, shoulders",
+          secondaryMuscles: "Legs",
+          category: "cardio",
+          caloriesPerMinute: 9,
+          modifications: "Slow tempo or hands on elevated surface",
+          safetyNotes: "Keep hips level and core tight"
+        }
+      ];
+    }
+    
+    if (name.includes('strength') || name.includes('weight')) {
+      return [
+        {
+          name: "Push-ups",
+          description: "Upper body strength exercise targeting chest, shoulders, and triceps",
+          difficultyLevel: "Intermediate",
+          equipmentNeeded: "None",
+          primaryMuscles: "Chest, shoulders, triceps",
+          secondaryMuscles: "Core",
+          category: "strength",
+          caloriesPerMinute: 6,
+          modifications: "Knee push-ups or incline push-ups",
+          safetyNotes: "Keep straight line from head to heels"
+        },
+        {
+          name: "Squats",
+          description: "Lower body strength exercise targeting glutes and quadriceps",
+          difficultyLevel: "Beginner",
+          equipmentNeeded: "None",
+          primaryMuscles: "Glutes, quadriceps",
+          secondaryMuscles: "Core, calves",
+          category: "strength",
+          caloriesPerMinute: 5,
+          modifications: "Chair-assisted squats",
+          safetyNotes: "Keep knees behind toes"
+        },
+        {
+          name: "Lunges",
+          description: "Single-leg strength exercise for lower body and balance",
+          difficultyLevel: "Intermediate",
+          equipmentNeeded: "None",
+          primaryMuscles: "Glutes, quadriceps",
+          secondaryMuscles: "Hamstrings, calves",
+          category: "strength",
+          caloriesPerMinute: 6,
+          modifications: "Stationary lunges or assisted lunges",
+          safetyNotes: "Keep front knee over ankle"
+        },
+        {
+          name: "Plank",
+          description: "Core strengthening exercise in push-up position hold",
+          difficultyLevel: "Intermediate",
+          equipmentNeeded: "None",
+          primaryMuscles: "Core",
+          secondaryMuscles: "Shoulders, glutes",
+          category: "strength",
+          caloriesPerMinute: 4,
+          modifications: "Knee plank or wall plank",
+          safetyNotes: "Keep straight line from head to heels"
+        }
+      ];
+    }
+    
+    if (name.includes('yoga') || name.includes('pilates')) {
+      return [
+        {
+          name: "Child's Pose",
+          description: "Restorative yoga pose for relaxation and gentle stretching",
+          difficultyLevel: "Beginner",
+          equipmentNeeded: "Yoga mat",
+          primaryMuscles: "Back, hips",
+          secondaryMuscles: "Shoulders",
+          category: "flexibility",
+          caloriesPerMinute: 2,
+          modifications: "Wide-knee child's pose",
+          safetyNotes: "Listen to your body, don't force"
+        },
+        {
+          name: "Downward Dog",
+          description: "Foundational yoga pose that stretches and strengthens",
+          difficultyLevel: "Intermediate",
+          equipmentNeeded: "Yoga mat",
+          primaryMuscles: "Shoulders, hamstrings",
+          secondaryMuscles: "Core, calves",
+          category: "flexibility",
+          caloriesPerMinute: 3,
+          modifications: "Hands on blocks or bend knees",
+          safetyNotes: "Distribute weight evenly"
+        },
+        {
+          name: "Cat-Cow Stretch",
+          description: "Spinal mobility exercise alternating between arch and round",
+          difficultyLevel: "Beginner",
+          equipmentNeeded: "Yoga mat",
+          primaryMuscles: "Spine, core",
+          secondaryMuscles: "Shoulders",
+          category: "flexibility",
+          caloriesPerMinute: 2,
+          modifications: "Seated version available",
+          safetyNotes: "Move slowly and mindfully"
+        },
+        {
+          name: "Warrior I",
+          description: "Standing yoga pose that builds strength and stability",
+          difficultyLevel: "Intermediate",
+          equipmentNeeded: "Yoga mat",
+          primaryMuscles: "Legs, core",
+          secondaryMuscles: "Shoulders, back",
+          category: "balance",
+          caloriesPerMinute: 3,
+          modifications: "Use wall for support",
+          safetyNotes: "Keep front knee over ankle"
+        }
+      ];
+    }
+    
+    // Default exercises for any other class type
+    return [
+      {
+        name: "Basic Warm-up",
+        description: "Light movement to prepare the body for exercise",
+        difficultyLevel: "Beginner",
+        equipmentNeeded: "None",
+        primaryMuscles: "Full body",
+        secondaryMuscles: "Core",
+        category: "cardio",
+        caloriesPerMinute: 3,
+        modifications: "Adjust intensity as needed",
+        safetyNotes: "Start slowly and gradually increase intensity"
+      },
+      {
+        name: "Cool-down Stretch",
+        description: "Gentle stretching to help muscles recover",
+        difficultyLevel: "Beginner",
+        equipmentNeeded: "None",
+        primaryMuscles: "Full body",
+        secondaryMuscles: "Core",
+        category: "flexibility",
+        caloriesPerMinute: 2,
+        modifications: "Hold stretches as comfortable",
+        safetyNotes: "Never bounce while stretching"
+      }
+    ];
   }
 
   // Exercise operations
@@ -410,15 +614,14 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(routines, eq(calendarEvents.routineId, routines.id))
       .where(eq(calendarEvents.userId, userId));
 
+    const conditions = [eq(calendarEvents.userId, userId)];
+    
     if (startDate && endDate) {
-      query = query.where(
-        and(
-          eq(calendarEvents.userId, userId),
-          sql`${calendarEvents.startDatetime} >= ${startDate}`,
-          sql`${calendarEvents.endDatetime} <= ${endDate}`
-        )
-      );
+      conditions.push(sql`${calendarEvents.startDatetime} >= ${startDate}`);
+      conditions.push(sql`${calendarEvents.endDatetime} <= ${endDate}`);
     }
+    
+    query = query.where(and(...conditions));
 
     const results = await query.orderBy(calendarEvents.startDatetime);
 
@@ -463,8 +666,7 @@ export class DatabaseStorage implements IStorage {
       .from(routines)
       .leftJoin(classTypes, eq(routines.classTypeId, classTypes.id))
       .innerJoin(users, eq(routines.createdByUserId, users.id))
-      .leftJoin(routineExercises, eq(routines.id, routineExercises.routineId))
-      .where(eq(routines.isPublic, true));
+      .leftJoin(routineExercises, eq(routines.id, routineExercises.routineId));
 
     const conditions = [eq(routines.isPublic, true)];
 
@@ -475,9 +677,7 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(routines.classTypeId, filters.classType));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
+    query = query.where(and(...conditions));
 
     const results = await query
       .groupBy(routines.id, classTypes.id, users.id)

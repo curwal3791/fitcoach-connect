@@ -59,6 +59,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdByUserId: userId,
       });
       const classType = await storage.createClassType(data);
+      
+      // Create default exercises for this class type
+      await storage.createDefaultExercisesForClass(classType, userId);
+      
       res.status(201).json(classType);
     } catch (error) {
       console.error("Error creating class type:", error);

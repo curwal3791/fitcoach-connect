@@ -6,8 +6,30 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Trash2, GripVertical, Plus, Search } from "lucide-react";
-import type { Exercise, RoutineExercise, ClassType } from "@shared/schema";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { isUnauthorizedError } from "@/lib/authUtils";
+import { insertExerciseSchema, type Exercise, type RoutineExercise, type ClassType } from "@shared/schema";
+import { z } from "zod";
+
+const exerciseFormSchema = insertExerciseSchema.omit({
+  id: true,
+  createdByUserId: true,
+  isPublic: true,
+  createdAt: true,
+}).extend({
+  name: z.string().min(1, "Exercise name is required"),
+  category: z.enum(["strength", "cardio", "flexibility", "balance"]),
+  difficultyLevel: z.enum(["Beginner", "Intermediate", "Advanced"]),
+});
+
+type ExerciseFormData = z.infer<typeof exerciseFormSchema>;
 
 interface RoutineBuilderProps {
   exercises: Exercise[];
@@ -41,6 +63,68 @@ export default function RoutineBuilder({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [isCreateExerciseDialogOpen, setIsCreateExerciseDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const exerciseForm = useForm<ExerciseFormData>({
+    resolver: zodResolver(exerciseFormSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      difficultyLevel: "Beginner",
+      equipmentNeeded: "",
+      primaryMuscles: "",
+      secondaryMuscles: "",
+      category: "strength",
+      caloriesPerMinute: 5,
+      modifications: "",
+      safetyNotes: "",
+    },
+  });
+
+  // Create exercise mutation
+  const createExercise = useMutation({
+    mutationFn: async (data: ExerciseFormData) => {
+      return await apiRequest("POST", "/api/exercises", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
+      setIsCreateExerciseDialogOpen(false);
+      exerciseForm.reset();
+      toast({
+        title: "Success",
+        description: "Exercise created successfully!",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to create exercise. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onExerciseSubmit = (data: ExerciseFormData) => {
+    createExercise.mutate(data);
+  };
+
+  const handleCloseExerciseDialog = () => {
+    setIsCreateExerciseDialogOpen(false);
+    exerciseForm.reset();
+  };
 
   const filteredExercises = exercises.filter(exercise => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -120,7 +204,213 @@ export default function RoutineBuilder({
       <div className="lg:col-span-1">
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle className="text-lg mb-4">Exercise Library</CardTitle>
+            <div className="flex items-center justify-between mb-4">
+              <CardTitle className="text-lg">Exercise Library</CardTitle>
+              <Dialog open={isCreateExerciseDialogOpen} onOpenChange={setIsCreateExerciseDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-primary hover:bg-primary/90" data-testid="button-add-new-exercise">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add New
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Create New Exercise</DialogTitle>
+                    <DialogDescription>
+                      Add a new exercise to your library that you can use in routines.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...exerciseForm}>
+                    <form onSubmit={exerciseForm.handleSubmit(onExerciseSubmit)} className="space-y-4">
+                      <FormField
+                        control={exerciseForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Exercise Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter exercise name" {...field} data-testid="input-new-exercise-name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={exerciseForm.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Describe the exercise..." 
+                                {...field} 
+                                data-testid="input-new-exercise-description"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={exerciseForm.control}
+                          name="category"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Category</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-new-exercise-category">
+                                    <SelectValue placeholder="Select category" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="strength">Strength</SelectItem>
+                                  <SelectItem value="cardio">Cardio</SelectItem>
+                                  <SelectItem value="flexibility">Flexibility</SelectItem>
+                                  <SelectItem value="balance">Balance</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={exerciseForm.control}
+                          name="difficultyLevel"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Difficulty</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-new-exercise-difficulty">
+                                    <SelectValue placeholder="Select difficulty" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Beginner">Beginner</SelectItem>
+                                  <SelectItem value="Intermediate">Intermediate</SelectItem>
+                                  <SelectItem value="Advanced">Advanced</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={exerciseForm.control}
+                          name="equipmentNeeded"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Equipment Needed</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., Dumbbells, Mat" {...field} data-testid="input-new-exercise-equipment" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={exerciseForm.control}
+                          name="caloriesPerMinute"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Calories per Minute</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  placeholder="5" 
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  data-testid="input-new-exercise-calories"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={exerciseForm.control}
+                        name="primaryMuscles"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Primary Muscles</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., Chest, Shoulders" {...field} data-testid="input-new-exercise-primary" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={exerciseForm.control}
+                        name="modifications"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Modifications (Optional)</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Alternative variations for beginners or advanced..." 
+                                {...field} 
+                                data-testid="input-new-exercise-modifications"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={exerciseForm.control}
+                        name="safetyNotes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Safety Notes (Optional)</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Important safety considerations..." 
+                                {...field} 
+                                data-testid="input-new-exercise-safety"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={handleCloseExerciseDialog}
+                          data-testid="button-cancel-exercise"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          disabled={createExercise.isPending}
+                          data-testid="button-create-exercise"
+                        >
+                          {createExercise.isPending ? "Creating..." : "Create Exercise"}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </div>
             <div className="space-y-4">
               <div className="relative">
                 <Input
