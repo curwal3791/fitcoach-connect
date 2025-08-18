@@ -387,7 +387,11 @@ export default function Classes() {
                     <div 
                       key={routine.id} 
                       className="p-4 hover:bg-gray-50 cursor-pointer transition-colors group"
-                      onClick={() => navigate(`/routines?edit=${routine.id}`)}
+                      onClick={() => {
+                        // Store the routine ID in localStorage for the routines tab to pick up
+                        localStorage.setItem('selectedRoutineId', routine.id);
+                        navigate('/routines');
+                      }}
                       data-testid={`routine-item-${routine.id}`}
                     >
                       <div className="flex items-center justify-between">

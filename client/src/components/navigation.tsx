@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   DropdownMenu, 
@@ -26,6 +27,7 @@ const navigation = [
 
 export default function Navigation({ currentTab, onTabChange }: NavigationProps) {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase() || 'U';
@@ -45,7 +47,10 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
                 {navigation.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => onTabChange(item.id)}
+                    onClick={() => {
+                      onTabChange(item.id);
+                      navigate(item.id === 'dashboard' ? '/' : `/${item.id}`);
+                    }}
                     className={cn(
                       "px-3 py-2 rounded-md text-sm font-medium transition-colors",
                       currentTab === item.id

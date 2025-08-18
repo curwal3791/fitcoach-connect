@@ -46,6 +46,15 @@ export default function Routines() {
   const [routineClassType, setRoutineClassType] = useState<string>("");
   const [filterClassType, setFilterClassType] = useState<string>("all");
 
+  // Check for stored routine ID from navigation
+  useEffect(() => {
+    const storedRoutineId = localStorage.getItem('selectedRoutineId');
+    if (storedRoutineId) {
+      setSelectedRoutineId(storedRoutineId);
+      localStorage.removeItem('selectedRoutineId'); // Clean up after use
+    }
+  }, []);
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
