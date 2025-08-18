@@ -46,21 +46,12 @@ export default function Routines() {
   const [routineClassType, setRoutineClassType] = useState<string>("");
   const [filterClassType, setFilterClassType] = useState<string>("all");
 
-  // Check for stored routine ID from navigation or new routine class type
+  // Check for stored routine ID from navigation
   useEffect(() => {
     const storedRoutineId = localStorage.getItem('selectedRoutineId');
-    const newRoutineClassType = localStorage.getItem('newRoutineClassType');
-    
     if (storedRoutineId) {
       setSelectedRoutineId(storedRoutineId);
-      localStorage.removeItem('selectedRoutineId'); // Clean up after use
-    } else if (newRoutineClassType) {
-      // Create new routine with the specified class type
-      const classTypeInfo = JSON.parse(newRoutineClassType);
-      setRoutineClassType(classTypeInfo.id);
-      setRoutineName(`New ${classTypeInfo.name} Routine`);
-      setIsCreateDialogOpen(true);
-      localStorage.removeItem('newRoutineClassType'); // Clean up after use
+      localStorage.removeItem('selectedRoutineId');
     }
   }, []);
 
@@ -145,6 +136,23 @@ export default function Routines() {
       });
     },
   });
+
+  // Check for class type from Classes page navigation
+  useEffect(() => {
+    const newRoutineClassType = localStorage.getItem('newRoutineClassType');
+    if (newRoutineClassType) {
+      const classTypeInfo = JSON.parse(newRoutineClassType);
+      const routineData = {
+        name: `New ${classTypeInfo.name} Routine`,
+        description: "",
+        classTypeId: classTypeInfo.id,
+        isPublic: false,
+      };
+      
+      createRoutineMutation.mutate(routineData);
+      localStorage.removeItem('newRoutineClassType');
+    }
+  }, [createRoutineMutation]);
 
   const updateRoutineMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertRoutine> }) => {
