@@ -6,15 +6,16 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import RoutineBuilder from "@/components/routine-builder";
-import { Plus, Printer, Save } from "lucide-react";
+import { Plus, Printer, Save, Filter } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { 
@@ -43,6 +44,7 @@ export default function Routines() {
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
   const [routineName, setRoutineName] = useState("New Routine");
   const [routineClassType, setRoutineClassType] = useState<string>("");
+  const [filterClassType, setFilterClassType] = useState<string>("all");
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -281,6 +283,12 @@ export default function Routines() {
     }
   };
 
+  // Filter routines based on selected class type
+  const filteredRoutines = routines?.filter(routine => {
+    if (filterClassType === "all") return true;
+    return routine.classTypeId === filterClassType;
+  }) || [];
+
   const handleSaveRoutine = () => {
     if (selectedRoutineId) {
       updateRoutineMutation.mutate({ 
@@ -339,6 +347,9 @@ export default function Routines() {
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>Create New Routine</DialogTitle>
+                <DialogDescription>
+                  Create a new workout routine and assign it to a class type.
+                </DialogDescription>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -367,6 +378,7 @@ export default function Routines() {
                             placeholder="Describe your routine..." 
                             {...field} 
                             data-testid="input-routine-description"
+                            value={field.value || ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -425,13 +437,40 @@ export default function Routines() {
 
       {!selectedRoutineId ? (
         /* Routine List */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div>
+          {/* Filter Controls */}
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Filter className="w-4 h-4 text-gray-500" />
+                <Label htmlFor="filter-class-type" className="text-sm font-medium">Filter by Class Type:</Label>
+              </div>
+              <Select value={filterClassType} onValueChange={setFilterClassType}>
+                <SelectTrigger className="w-48" id="filter-class-type" data-testid="select-filter-class-type">
+                  <SelectValue placeholder="All class types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All class types</SelectItem>
+                  {classTypes?.map((classType) => (
+                    <SelectItem key={classType.id} value={classType.id}>
+                      {classType.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="text-sm text-gray-500">
+              {routines ? `${filteredRoutines.length} routine${filteredRoutines.length !== 1 ? 's' : ''}` : 'Loading...'}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {routinesLoading ? (
             [...Array(6)].map((_, i) => (
               <Skeleton key={i} className="h-48 w-full" />
             ))
-          ) : routines && routines.length > 0 ? (
-            routines.map((routine) => (
+          ) : filteredRoutines && filteredRoutines.length > 0 ? (
+            filteredRoutines.map((routine) => (
               <Card 
                 key={routine.id} 
                 className="cursor-pointer hover:shadow-md transition-shadow"
@@ -448,9 +487,9 @@ export default function Routines() {
                       {routine.name}
                     </CardTitle>
                     {routine.classType && (
-                      <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                      <Badge variant="secondary" className="text-xs">
                         {routine.classType.name}
-                      </span>
+                      </Badge>
                     )}
                   </div>
                 </CardHeader>
@@ -460,7 +499,7 @@ export default function Routines() {
                   )}
                   <div className="flex justify-between items-center text-sm text-gray-500">
                     <span>{routine.exerciseCount} exercises</span>
-                    <span>{Math.round(routine.totalDuration / 60)} min</span>
+                    <span>{Math.round((routine.totalDuration || 0) / 60)} min</span>
                   </div>
                 </CardContent>
               </Card>
@@ -474,6 +513,7 @@ export default function Routines() {
               </div>
             </div>
           )}
+          </div>
         </div>
       ) : (
         /* Routine Builder */
@@ -492,14 +532,14 @@ export default function Routines() {
             <RoutineBuilder
               exercises={exercises || []}
               classTypes={classTypes || []}
-              routineExercises={selectedRoutine?.exercises || []}
+              routineExercises={(selectedRoutine as any)?.exercises || []}
               onAddExercise={handleAddExercise}
               onUpdateExercise={handleUpdateExercise}
               onRemoveExercise={handleRemoveExercise}
               onReorderExercises={handleReorderExercises}
               routineName={routineName}
               onRoutineNameChange={handleRoutineNameChange}
-              totalDuration={selectedRoutine?.totalDuration || 0}
+              totalDuration={(selectedRoutine as any)?.totalDuration || 0}
               classTypeId={routineClassType}
               onClassTypeChange={handleClassTypeChange}
             />
