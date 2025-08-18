@@ -46,12 +46,21 @@ export default function Routines() {
   const [routineClassType, setRoutineClassType] = useState<string>("");
   const [filterClassType, setFilterClassType] = useState<string>("all");
 
-  // Check for stored routine ID from navigation
+  // Check for stored routine ID from navigation or new routine class type
   useEffect(() => {
     const storedRoutineId = localStorage.getItem('selectedRoutineId');
+    const newRoutineClassType = localStorage.getItem('newRoutineClassType');
+    
     if (storedRoutineId) {
       setSelectedRoutineId(storedRoutineId);
       localStorage.removeItem('selectedRoutineId'); // Clean up after use
+    } else if (newRoutineClassType) {
+      // Create new routine with the specified class type
+      const classTypeInfo = JSON.parse(newRoutineClassType);
+      setRoutineClassType(classTypeInfo.id);
+      setRoutineName(`New ${classTypeInfo.name} Routine`);
+      setIsCreateDialogOpen(true);
+      localStorage.removeItem('newRoutineClassType'); // Clean up after use
     }
   }, []);
 
