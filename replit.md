@@ -10,6 +10,11 @@ The application serves as an all-in-one solution for fitness professionals to st
 
 Preferred communication style: Simple, everyday language.
 
+## Desired User Workflow
+1. **Class-First Organization**: Users should be able to go to Classes page, select a class, then create routines within that class
+2. **Calendar Integration**: Users should be able to select dates/times on calendar and add new classes directly from there
+3. **Complete Flow**: Classes → Routines → Exercises → Calendar Scheduling
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -50,11 +55,18 @@ Preferred communication style: Simple, everyday language.
 
 ### Application Features
 - **Dashboard**: Analytics and quick access to recent activities
+- **Class Management**: CRUD operations for fitness class types (HIIT, Yoga, etc.) ✓ COMPLETED
 - **Exercise Management**: CRUD operations for exercise database with filtering and search
-- **Routine Builder**: Drag-and-drop interface for creating structured workout sequences
-- **Calendar Integration**: Event scheduling and class management
+- **Routine Builder**: Drag-and-drop interface for creating structured workout sequences  
+- **Calendar Integration**: Event scheduling and class management with direct class creation
 - **Presentation Mode**: Full-screen presentation interface for conducting classes
 - **Responsive Design**: Mobile-first approach with cross-device compatibility
+
+### Current Status & Next Steps
+- ✅ **Class Types Management**: Users can create, edit, and delete class types
+- 🔄 **Next**: Link routine creation to specific classes
+- 🔄 **Next**: Enhanced calendar integration for class scheduling
+- 🔄 **Next**: Class-specific routine organization and filtering
 
 ### Development Architecture
 - **Monorepo Structure**: Shared schema and types between client and server
