@@ -64,9 +64,12 @@ Preferred communication style: Simple, everyday language.
 
 ### Current Status & Next Steps
 - ✅ **Class Types Management**: Users can create, edit, and delete class types
-- 🔄 **Next**: Link routine creation to specific classes
+- ✅ **Default Exercise Creation**: Auto-generates relevant exercises per class type (HIIT, Strength, Yoga, etc.)
+- ✅ **Routine Builder Enhancements**: Added "Add New Exercise" functionality within routine builder
+- ✅ **Class-to-Routine Workflow**: Complete flow from Classes → Select Class → View/Create Routines
+- ✅ **Enhanced Routine List**: Clickable routine list showing name, date, exercise count, and duration
 - 🔄 **Next**: Enhanced calendar integration for class scheduling
-- 🔄 **Next**: Class-specific routine organization and filtering
+- 🔄 **Next**: Presentation mode improvements
 
 ### Development Architecture
 - **Monorepo Structure**: Shared schema and types between client and server

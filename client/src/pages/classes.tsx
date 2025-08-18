@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Users, Calendar, Dumbbell, Zap, ArrowLeft } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Calendar, Dumbbell, Zap, ArrowLeft, Clock, Activity, ChevronRight } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertClassTypeSchema, insertRoutineSchema, type ClassType, type InsertClassType, type Routine } from "@shared/schema";
@@ -43,6 +44,7 @@ type RoutineFormData = z.infer<typeof routineFormSchema>;
 export default function Classes() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassType | null>(null);
   const [selectedClass, setSelectedClass] = useState<ClassType | null>(null);
@@ -372,36 +374,66 @@ export default function Classes() {
         <div>
           <h2 className="text-xl font-semibold mb-4">Routines for {selectedClass.name}</h2>
           {routinesLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-48 bg-gray-200 animate-pulse rounded-lg" />
+                <div key={i} className="h-20 bg-gray-200 animate-pulse rounded-lg" />
               ))}
             </div>
           ) : classRoutines.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {classRoutines.map((routine) => (
-                <Card 
-                  key={routine.id} 
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  data-testid={`routine-card-${routine.id}`}
-                >
-                  <CardHeader>
-                    <CardTitle className="text-lg" data-testid={`routine-title-${routine.id}`}>
-                      {routine.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {routine.description && (
-                      <p className="text-gray-600 text-sm mb-4">{routine.description}</p>
-                    )}
-                    <div className="flex justify-between items-center text-sm text-gray-500">
-                      <span>{routine.exerciseCount || 0} exercises</span>
-                      <span>{Math.round((routine.totalDuration || 0) / 60)} min</span>
+            <Card>
+              <CardContent className="p-0">
+                <div className="divide-y">
+                  {classRoutines.map((routine, index) => (
+                    <div 
+                      key={routine.id} 
+                      className="p-4 hover:bg-gray-50 cursor-pointer transition-colors group"
+                      onClick={() => navigate(`/routines?edit=${routine.id}`)}
+                      data-testid={`routine-item-${routine.id}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                              <Dumbbell className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-medium text-gray-900 group-hover:text-primary transition-colors" data-testid={`routine-name-${routine.id}`}>
+                                {routine.name}
+                              </h3>
+                              {routine.description && (
+                                <p className="text-sm text-gray-500 truncate">{routine.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-6 text-sm text-gray-500 ml-4">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            <span data-testid={`routine-date-${routine.id}`}>
+                              {new Date(routine.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Activity className="w-4 h-4" />
+                            <span data-testid={`routine-exercises-${routine.id}`}>
+                              {routine.exerciseCount || 0} exercises
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            <span data-testid={`routine-duration-${routine.id}`}>
+                              {Math.round((routine.totalDuration || 0) / 60)} min
+                            </span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" />
+                        </div>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           ) : (
             <div className="text-center py-12" data-testid="text-no-routines-for-class">
               <div className="text-gray-500">
