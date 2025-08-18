@@ -29,7 +29,13 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
-const routineFormSchema = insertRoutineSchema.extend({
+const routineFormSchema = insertRoutineSchema.omit({
+  id: true,
+  createdByUserId: true, 
+  createdAt: true,
+  updatedAt: true,
+  totalDuration: true,
+}).extend({
   name: z.string().min(1, "Routine name is required"),
 });
 
@@ -140,7 +146,7 @@ export default function Routines() {
   // Check for class type from Classes page navigation
   useEffect(() => {
     const newRoutineClassType = localStorage.getItem('newRoutineClassType');
-    if (newRoutineClassType) {
+    if (newRoutineClassType && !createRoutineMutation.isPending) {
       const classTypeInfo = JSON.parse(newRoutineClassType);
       const routineData = {
         name: `New ${classTypeInfo.name} Routine`,
@@ -152,7 +158,7 @@ export default function Routines() {
       createRoutineMutation.mutate(routineData);
       localStorage.removeItem('newRoutineClassType');
     }
-  }, [createRoutineMutation]);
+  }, [createRoutineMutation.isPending]);
 
   const updateRoutineMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertRoutine> }) => {
