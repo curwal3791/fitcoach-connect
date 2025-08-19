@@ -21,7 +21,8 @@ type EventFormData = {
   classTypeId: string;
   routineId?: string;
   eventDate: string;
-  startTime: string;
+  startHour: string;
+  startMinute: string;
   duration: string;
   location?: string;
   notes?: string;
@@ -72,7 +73,8 @@ export default function Calendar() {
       const title = selectedClassType?.name || "Fitness Class";
       
       // Calculate start and end times
-      const startDateTime = new Date(`${data.eventDate}T${data.startTime}`);
+      const startTime = `${data.startHour}:${data.startMinute}`;
+      const startDateTime = new Date(`${data.eventDate}T${startTime}`);
       const endDateTime = new Date(startDateTime.getTime() + (parseInt(data.duration) * 60 * 1000));
       
       const eventData = {
