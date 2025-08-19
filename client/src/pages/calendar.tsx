@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar as CalendarIcon, MapPin, Clock } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, MapPin, Clock, Edit, Trash2 } from "lucide-react";
 import { 
   type CalendarEvent, 
   type ClassType,
@@ -34,7 +34,9 @@ export default function Calendar() {
   const queryClient = useQueryClient();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -120,7 +122,110 @@ export default function Calendar() {
   });
 
   const handleFormSubmit = (data: EventFormData) => {
-    createEventMutation.mutate(data);
+    if (editingEvent) {
+      updateEventMutation.mutate({ id: editingEvent.id, data });
+    } else {
+      createEventMutation.mutate(data);
+    }
+  };
+
+  const updateEventMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: EventFormData }) => {
+      // Get the selected class type for the title
+      const selectedClassType = classTypes?.find(ct => ct.id === data.classTypeId);
+      const title = selectedClassType?.name || "Fitness Class";
+      
+      // Calculate start and end times
+      const startTime = `${data.startHour}:${data.startMinute}`;
+      const startDateTime = new Date(`${data.eventDate}T${startTime}`);
+      const endDateTime = new Date(startDateTime.getTime() + (parseInt(data.duration) * 60 * 1000));
+      
+      const eventData = {
+        title,
+        classTypeId: data.classTypeId || null,
+        routineId: (data.routineId && data.routineId !== "none") ? data.routineId : null,
+        startDatetime: startDateTime.toISOString(),
+        endDatetime: endDateTime.toISOString(),
+        location: data.location || null,
+        notes: data.notes || null,
+        isRecurring: false,
+        recurrencePattern: null,
+      };
+      const response = await apiRequest("PUT", `/api/calendar/events/${id}`, eventData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
+      setIsEditDialogOpen(false);
+      setEditingEvent(null);
+      toast({
+        title: "Success",
+        description: "Event updated successfully",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update event",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteEventMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/calendar/events/${id}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
+      toast({
+        title: "Success",
+        description: "Event deleted successfully",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete event",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditEvent = (event: CalendarEvent) => {
+    setEditingEvent(event);
+    const startDate = new Date(event.startDatetime);
+    setSelectedDate(startDate);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteEvent = (id: string) => {
+    if (confirm("Are you sure you want to delete this event?")) {
+      deleteEventMutation.mutate(id);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -210,6 +315,29 @@ export default function Calendar() {
               onCancel={() => setIsCreateDialogOpen(false)}
               isLoading={createEventMutation.isPending}
             />
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Event Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Edit Event</DialogTitle>
+            </DialogHeader>
+            {editingEvent && (
+              <CalendarEventForm
+                classTypes={classTypes}
+                routines={routines}
+                selectedDate={selectedDate}
+                onSubmit={handleFormSubmit}
+                onCancel={() => {
+                  setIsEditDialogOpen(false);
+                  setEditingEvent(null);
+                }}
+                isLoading={updateEventMutation.isPending}
+                editingEvent={editingEvent}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>
@@ -321,17 +449,39 @@ export default function Calendar() {
                                 </div>
                               )}
                             </div>
-                            <div className="flex items-center space-x-2">
-                              {event.classType && (
-                                <Badge variant="outline" data-testid={`event-class-type-${event.id}`}>
-                                  {event.classType.name}
-                                </Badge>
-                              )}
-                              {event.routine && (
-                                <Badge variant="outline" data-testid={`event-routine-${event.id}`}>
-                                  {event.routine.name}
-                                </Badge>
-                              )}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                {event.classType && (
+                                  <Badge variant="outline" data-testid={`event-class-type-${event.id}`}>
+                                    {event.classType.name}
+                                  </Badge>
+                                )}
+                                {event.routine && (
+                                  <Badge variant="outline" data-testid={`event-routine-${event.id}`}>
+                                    {event.routine.name}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex space-x-1">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditEvent(event)}
+                                  data-testid={`button-edit-event-${event.id}`}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                  data-testid={`button-delete-event-${event.id}`}
+                                  className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>

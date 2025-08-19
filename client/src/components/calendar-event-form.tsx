@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { type ClassType, type Routine } from "@shared/schema";
+import { type ClassType, type Routine, type CalendarEvent } from "@shared/schema";
 
 const eventFormSchema = z.object({
   classTypeId: z.string().min(1, "Class type is required"),
@@ -29,6 +29,7 @@ interface CalendarEventFormProps {
   onSubmit: (data: EventFormData) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  editingEvent?: CalendarEvent | null;
 }
 
 export function CalendarEventForm({ 
@@ -37,7 +38,8 @@ export function CalendarEventForm({
   selectedDate, 
   onSubmit, 
   onCancel, 
-  isLoading = false 
+  isLoading = false,
+  editingEvent = null
 }: CalendarEventFormProps) {
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
@@ -53,10 +55,27 @@ export function CalendarEventForm({
     },
   });
 
-  // Update date when selectedDate changes
+  // Update form when editing event or date changes
   React.useEffect(() => {
-    form.setValue('eventDate', selectedDate.toISOString().split('T')[0]);
-  }, [selectedDate, form]);
+    if (editingEvent) {
+      const startDate = new Date(editingEvent.startDatetime);
+      const endDate = new Date(editingEvent.endDatetime);
+      const duration = Math.round((endDate.getTime() - startDate.getTime()) / (60 * 1000));
+      
+      form.reset({
+        classTypeId: editingEvent.classTypeId || "",
+        routineId: editingEvent.routineId || "none",
+        eventDate: startDate.toISOString().split('T')[0],
+        startHour: startDate.getHours().toString().padStart(2, '0'),
+        startMinute: startDate.getMinutes().toString().padStart(2, '0'),
+        duration: duration.toString(),
+        location: editingEvent.location || "",
+        notes: editingEvent.notes || "",
+      });
+    } else {
+      form.setValue('eventDate', selectedDate.toISOString().split('T')[0]);
+    }
+  }, [selectedDate, editingEvent, form]);
 
   return (
     <Form {...form}>
@@ -265,7 +284,7 @@ export function CalendarEventForm({
             disabled={isLoading}
             data-testid="button-create-event"
           >
-            {isLoading ? "Creating..." : "Create Event"}
+            {isLoading ? (editingEvent ? "Updating..." : "Creating...") : (editingEvent ? "Update Event" : "Create Event")}
           </Button>
         </div>
       </form>
