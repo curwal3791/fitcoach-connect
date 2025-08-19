@@ -356,19 +356,23 @@ export class DatabaseStorage implements IStorage {
     equipment?: string;
     userId?: string;
   }): Promise<Exercise[]> {
+    console.log('=== getExercises called with filters:', JSON.stringify(filters, null, 2));
     let query = db.select().from(exercises);
     const conditions = [];
 
-    if (filters?.search) {
+    if (filters?.search && filters.search.trim() !== '') {
       conditions.push(ilike(exercises.name, `%${filters.search}%`));
+      console.log('Added search filter:', filters.search);
     }
-    if (filters?.category) {
+    if (filters?.category && filters.category !== 'all') {
       conditions.push(eq(exercises.category, filters.category as any));
+      console.log('Added category filter:', filters.category);
     }
-    if (filters?.difficulty) {
+    if (filters?.difficulty && filters.difficulty !== 'all') {
       conditions.push(eq(exercises.difficultyLevel, filters.difficulty as any));
+      console.log('Added difficulty filter:', filters.difficulty);
     }
-    if (filters?.equipment) {
+    if (filters?.equipment && filters.equipment !== 'all') {
       if (filters.equipment === 'No Equipment') {
         conditions.push(
           sql`(${exercises.equipmentNeeded} IS NULL OR ${exercises.equipmentNeeded} = '' OR ${exercises.equipmentNeeded} = 'None')`
@@ -376,6 +380,7 @@ export class DatabaseStorage implements IStorage {
       } else {
         conditions.push(ilike(exercises.equipmentNeeded, `%${filters.equipment}%`));
       }
+      console.log('Added equipment filter:', filters.equipment);
     }
 
     // Show public exercises and user's private exercises
@@ -387,11 +392,15 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(exercises.isPublic, true));
     }
 
+    console.log('Total conditions applied:', conditions.length);
+    
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
 
-    return await query.orderBy(exercises.name);
+    const result = await query.orderBy(exercises.name);
+    console.log('Query result count:', result.length, 'with filters:', filters);
+    return result;
   }
 
   async getExercise(id: string): Promise<Exercise | undefined> {
