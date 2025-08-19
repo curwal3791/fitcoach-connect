@@ -21,7 +21,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertExerciseSchema, type Exercise, type InsertExercise } from "@shared/schema";
 import { z } from "zod";
 
-const exerciseFormSchema = insertExerciseSchema.extend({
+const exerciseFormSchema = insertExerciseSchema.omit({
+  id: true,
+  createdByUserId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   name: z.string().min(1, "Exercise name is required"),
   description: z.string().optional(),
   difficultyLevel: z.enum(["Beginner", "Intermediate", "Advanced"]),
@@ -70,9 +75,9 @@ export default function Exercises() {
       description: "",
       difficultyLevel: "Beginner",
       category: "strength",
-      equipmentNeeded: "",
-      primaryMuscles: "",
-      secondaryMuscles: "",
+      equipmentNeeded: null,
+      primaryMuscles: null,
+      secondaryMuscles: null,
       modifications: "",
       safetyNotes: "",
       isPublic: false,
@@ -248,6 +253,7 @@ export default function Exercises() {
                         <Input 
                           placeholder="e.g. Dumbbells, No Equipment" 
                           {...field} 
+                          value={field.value || ""}
                           data-testid="input-exercise-equipment"
                         />
                       </FormControl>
@@ -266,6 +272,7 @@ export default function Exercises() {
                         <Input 
                           placeholder="e.g. Chest, Shoulders" 
                           {...field} 
+                          value={field.value || ""}
                           data-testid="input-exercise-muscles"
                         />
                       </FormControl>

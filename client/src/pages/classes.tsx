@@ -26,6 +26,7 @@ const classTypeFormSchema = insertClassTypeSchema.omit({
   id: true, 
   createdByUserId: true, 
   createdAt: true, 
+  updatedAt: true,
   isDefault: true 
 });
 
@@ -44,7 +45,7 @@ export default function Classes() {
     resolver: zodResolver(classTypeFormSchema),
     defaultValues: {
       name: "",
-      description: null,
+      description: "",
     },
   });
 
