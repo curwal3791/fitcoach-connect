@@ -332,10 +332,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/calendar/events', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const data = insertCalendarEventSchema.parse({
+      
+      // Convert string dates to Date objects before validation
+      const requestData = {
         ...req.body,
         userId,
-      });
+        startDatetime: new Date(req.body.startDatetime),
+        endDatetime: new Date(req.body.endDatetime),
+      };
+      
+      const data = insertCalendarEventSchema.parse(requestData);
       const event = await storage.createCalendarEvent(data);
       res.status(201).json(event);
     } catch (error) {
@@ -347,7 +353,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/calendar/events/:id', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
-      const data = insertCalendarEventSchema.partial().parse(req.body);
+      
+      // Convert string dates to Date objects if they exist
+      const requestData = { ...req.body };
+      if (req.body.startDatetime) {
+        requestData.startDatetime = new Date(req.body.startDatetime);
+      }
+      if (req.body.endDatetime) {
+        requestData.endDatetime = new Date(req.body.endDatetime);
+      }
+      
+      const data = insertCalendarEventSchema.partial().parse(requestData);
       const event = await storage.updateCalendarEvent(id, data);
       res.json(event);
     } catch (error) {
