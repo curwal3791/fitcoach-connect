@@ -66,6 +66,18 @@ export default function Exercises() {
 
   const { data: exercises, isLoading: exercisesLoading } = useQuery<Exercise[]>({
     queryKey: ["/api/exercises", filters],
+    queryFn: async () => {
+      const searchParams = new URLSearchParams();
+      if (filters.search) searchParams.append('search', filters.search);
+      if (filters.category && filters.category !== 'all') searchParams.append('category', filters.category);
+      if (filters.difficulty && filters.difficulty !== 'all') searchParams.append('difficulty', filters.difficulty);
+      if (filters.equipment && filters.equipment !== 'all') searchParams.append('equipment', filters.equipment);
+      
+      const url = `/api/exercises${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
+      return response.json();
+    },
     enabled: isAuthenticated,
   });
 
