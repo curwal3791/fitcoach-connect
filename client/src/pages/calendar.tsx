@@ -78,7 +78,7 @@ export default function Calendar() {
       const eventData = {
         title,
         classTypeId: data.classTypeId || null,
-        routineId: data.routineId || null,
+        routineId: (data.routineId && data.routineId !== "none") ? data.routineId : null,
         startDatetime: startDateTime.toISOString(),
         endDatetime: endDateTime.toISOString(),
         location: data.location || null,

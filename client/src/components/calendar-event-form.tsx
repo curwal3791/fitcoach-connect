@@ -42,7 +42,7 @@ export function CalendarEventForm({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       classTypeId: "",
-      routineId: "",
+      routineId: "none",
       eventDate: selectedDate.toISOString().split('T')[0],
       startTime: "09:00",
       duration: "60",
@@ -90,14 +90,17 @@ export function CalendarEventForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Routine (Optional)</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || ""}>
+              <Select 
+                onValueChange={(value) => field.onChange(value === "none" ? "" : value)} 
+                value={field.value || "none"}
+              >
                 <FormControl>
                   <SelectTrigger data-testid="select-routine">
                     <SelectValue placeholder="Select a routine" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No routine</SelectItem>
+                  <SelectItem value="none">No routine</SelectItem>
                   {routines?.map((routine) => (
                     <SelectItem key={routine.id} value={routine.id}>
                       {routine.name} {routine.totalDuration ? `(${Math.round(routine.totalDuration / 60)} min)` : ''}
