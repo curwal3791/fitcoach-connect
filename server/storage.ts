@@ -369,7 +369,13 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(exercises.difficultyLevel, filters.difficulty as any));
     }
     if (filters?.equipment) {
-      conditions.push(ilike(exercises.equipmentNeeded, `%${filters.equipment}%`));
+      if (filters.equipment === 'No Equipment') {
+        conditions.push(
+          sql`(${exercises.equipmentNeeded} IS NULL OR ${exercises.equipmentNeeded} = '' OR ${exercises.equipmentNeeded} = 'None')`
+        );
+      } else {
+        conditions.push(ilike(exercises.equipmentNeeded, `%${filters.equipment}%`));
+      }
     }
 
     // Show public exercises and user's private exercises
