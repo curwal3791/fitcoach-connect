@@ -358,48 +358,59 @@ export class DatabaseStorage implements IStorage {
   }): Promise<Exercise[]> {
     console.log('=== getExercises called with filters:', JSON.stringify(filters, null, 2));
     let query = db.select().from(exercises);
-    const conditions = [];
-
+    const filterConditions = [];
+    
+    // Build filter conditions first
     if (filters?.search && filters.search.trim() !== '') {
-      conditions.push(ilike(exercises.name, `%${filters.search}%`));
+      filterConditions.push(ilike(exercises.name, `%${filters.search}%`));
       console.log('Added search filter:', filters.search);
     }
     if (filters?.category && filters.category !== 'all') {
-      conditions.push(eq(exercises.category, filters.category as any));
+      filterConditions.push(eq(exercises.category, filters.category as any));
       console.log('Added category filter:', filters.category);
     }
     if (filters?.difficulty && filters.difficulty !== 'all') {
-      conditions.push(eq(exercises.difficultyLevel, filters.difficulty as any));
+      filterConditions.push(eq(exercises.difficultyLevel, filters.difficulty as any));
       console.log('Added difficulty filter:', filters.difficulty);
     }
     if (filters?.equipment && filters.equipment !== 'all') {
       if (filters.equipment === 'No Equipment') {
-        conditions.push(
+        filterConditions.push(
           sql`(${exercises.equipmentNeeded} IS NULL OR ${exercises.equipmentNeeded} = '' OR ${exercises.equipmentNeeded} = 'None')`
         );
       } else {
-        conditions.push(ilike(exercises.equipmentNeeded, `%${filters.equipment}%`));
+        filterConditions.push(ilike(exercises.equipmentNeeded, `%${filters.equipment}%`));
       }
       console.log('Added equipment filter:', filters.equipment);
     }
 
-    // Show public exercises and user's private exercises
-    if (filters?.userId) {
-      conditions.push(
-        sql`${exercises.isPublic} = true OR ${exercises.createdByUserId} = ${filters.userId}`
-      );
+    // Combine visibility and filter conditions properly
+    let finalCondition;
+    const visibilityCondition = filters?.userId 
+      ? sql`(${exercises.isPublic} = true OR ${exercises.createdByUserId} = ${filters.userId})`
+      : eq(exercises.isPublic, true);
+
+    if (filterConditions.length > 0) {
+      // Apply filters AND visibility: (visibility) AND (filter1 AND filter2 AND ...)
+      finalCondition = and(visibilityCondition, and(...filterConditions));
     } else {
-      conditions.push(eq(exercises.isPublic, true));
+      // Only visibility condition
+      finalCondition = visibilityCondition;
     }
 
-    console.log('Total conditions applied:', conditions.length);
+    console.log('Filter conditions applied:', filterConditions.length);
+    console.log('Final query has conditions:', !!finalCondition);
     
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
+    query = query.where(finalCondition);
 
     const result = await query.orderBy(exercises.name);
-    console.log('Query result count:', result.length, 'with filters:', filters);
+    console.log('Query result count:', result.length, 'Expected for cardio: should be 5');
+    
+    // Debug: log first few results
+    if (result.length > 0) {
+      console.log('Sample results:', result.slice(0, 3).map(r => ({name: r.name, category: r.category})));
+    }
+    
     return result;
   }
 
