@@ -268,7 +268,7 @@ export default function Calendar() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">No class type</SelectItem>
+                            <SelectItem value="none">No class type</SelectItem>
                             {classTypes?.map((classType) => (
                               <SelectItem key={classType.id} value={classType.id}>
                                 {classType.name}
@@ -294,7 +294,7 @@ export default function Calendar() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">No routine</SelectItem>
+                            <SelectItem value="none">No routine</SelectItem>
                             {routines?.map((routine) => (
                               <SelectItem key={routine.id} value={routine.id}>
                                 {routine.name}

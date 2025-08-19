@@ -21,16 +21,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertExerciseSchema, type Exercise, type InsertExercise } from "@shared/schema";
 import { z } from "zod";
 
-const exerciseFormSchema = insertExerciseSchema.omit({
-  id: true,
-  createdByUserId: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+const exerciseFormSchema = z.object({
   name: z.string().min(1, "Exercise name is required"),
   description: z.string().optional(),
   difficultyLevel: z.enum(["Beginner", "Intermediate", "Advanced"]),
   category: z.enum(["strength", "cardio", "flexibility", "balance"]),
+  equipmentNeeded: z.string().nullable().optional(),
+  primaryMuscles: z.string().nullable().optional(),
+  secondaryMuscles: z.string().nullable().optional(),
+  modifications: z.string().optional(),
+  safetyNotes: z.string().optional(),
+  isPublic: z.boolean().optional(),
 });
 
 type ExerciseFormData = z.infer<typeof exerciseFormSchema>;
@@ -42,9 +43,9 @@ export default function Exercises() {
   
   const [filters, setFilters] = useState({
     search: "",
-    category: "",
-    difficulty: "",
-    equipment: "",
+    category: "all",
+    difficulty: "all",
+    equipment: "all",
   });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
@@ -75,9 +76,9 @@ export default function Exercises() {
       description: "",
       difficultyLevel: "Beginner",
       category: "strength",
-      equipmentNeeded: null,
-      primaryMuscles: null,
-      secondaryMuscles: null,
+      equipmentNeeded: "",
+      primaryMuscles: "",
+      secondaryMuscles: "",
       modifications: "",
       safetyNotes: "",
       isPublic: false,
@@ -330,7 +331,7 @@ export default function Exercises() {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   <SelectItem value="cardio">Cardio</SelectItem>
                   <SelectItem value="strength">Strength</SelectItem>
                   <SelectItem value="flexibility">Flexibility</SelectItem>
@@ -346,7 +347,7 @@ export default function Exercises() {
                   <SelectValue placeholder="All Levels" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Levels</SelectItem>
+                  <SelectItem value="all">All Levels</SelectItem>
                   <SelectItem value="Beginner">Beginner</SelectItem>
                   <SelectItem value="Intermediate">Intermediate</SelectItem>
                   <SelectItem value="Advanced">Advanced</SelectItem>
@@ -361,7 +362,7 @@ export default function Exercises() {
                   <SelectValue placeholder="Any Equipment" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any Equipment</SelectItem>
+                  <SelectItem value="all">Any Equipment</SelectItem>
                   <SelectItem value="No Equipment">No Equipment</SelectItem>
                   <SelectItem value="Dumbbells">Dumbbells</SelectItem>
                   <SelectItem value="Resistance Bands">Resistance Bands</SelectItem>
