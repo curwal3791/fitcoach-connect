@@ -356,22 +356,18 @@ export class DatabaseStorage implements IStorage {
     equipment?: string;
     userId?: string;
   }): Promise<Exercise[]> {
-    console.log('=== getExercises called with filters:', JSON.stringify(filters, null, 2));
     let query = db.select().from(exercises);
     const filterConditions = [];
     
-    // Build filter conditions first
+    // Build filter conditions
     if (filters?.search && filters.search.trim() !== '') {
       filterConditions.push(ilike(exercises.name, `%${filters.search}%`));
-      console.log('Added search filter:', filters.search);
     }
     if (filters?.category && filters.category !== 'all') {
       filterConditions.push(eq(exercises.category, filters.category as any));
-      console.log('Added category filter:', filters.category);
     }
     if (filters?.difficulty && filters.difficulty !== 'all') {
       filterConditions.push(eq(exercises.difficultyLevel, filters.difficulty as any));
-      console.log('Added difficulty filter:', filters.difficulty);
     }
     if (filters?.equipment && filters.equipment !== 'all') {
       if (filters.equipment === 'No Equipment') {
@@ -381,37 +377,19 @@ export class DatabaseStorage implements IStorage {
       } else {
         filterConditions.push(ilike(exercises.equipmentNeeded, `%${filters.equipment}%`));
       }
-      console.log('Added equipment filter:', filters.equipment);
     }
 
     // Combine visibility and filter conditions properly
-    let finalCondition;
     const visibilityCondition = filters?.userId 
       ? sql`(${exercises.isPublic} = true OR ${exercises.createdByUserId} = ${filters.userId})`
       : eq(exercises.isPublic, true);
 
-    if (filterConditions.length > 0) {
-      // Apply filters AND visibility: (visibility) AND (filter1 AND filter2 AND ...)
-      finalCondition = and(visibilityCondition, and(...filterConditions));
-    } else {
-      // Only visibility condition
-      finalCondition = visibilityCondition;
-    }
-
-    console.log('Filter conditions applied:', filterConditions.length);
-    console.log('Final query has conditions:', !!finalCondition);
+    const finalCondition = filterConditions.length > 0
+      ? and(visibilityCondition, and(...filterConditions))
+      : visibilityCondition;
     
     query = query.where(finalCondition);
-
-    const result = await query.orderBy(exercises.name);
-    console.log('Query result count:', result.length, 'Expected for cardio: should be 5');
-    
-    // Debug: log first few results
-    if (result.length > 0) {
-      console.log('Sample results:', result.slice(0, 3).map(r => ({name: r.name, category: r.category})));
-    }
-    
-    return result;
+    return await query.orderBy(exercises.name);
   }
 
   async getExercise(id: string): Promise<Exercise | undefined> {
