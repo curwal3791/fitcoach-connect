@@ -7,39 +7,25 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Calendar as CalendarIcon, MapPin, Clock } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { 
-  insertCalendarEventSchema,
   type CalendarEvent, 
   type ClassType,
   type Routine,
-  type InsertCalendarEvent 
 } from "@shared/schema";
-import { z } from "zod";
+import { CalendarEventForm } from "@/components/calendar-event-form";
 
-const eventFormSchema = insertCalendarEventSchema.omit({
-  id: true,
-  userId: true,
-  createdAt: true,
-}).extend({
-  title: z.string().min(1, "Event title is required"),
-  startDatetime: z.string().min(1, "Start date and time is required"),
-  endDatetime: z.string().min(1, "End date and time is required"),
-  location: z.string().optional(),
-  notes: z.string().optional(),
-  classTypeId: z.string().optional(),
-  routineId: z.string().optional(),
-});
-
-type EventFormData = z.infer<typeof eventFormSchema>;
+type EventFormData = {
+  classTypeId: string;
+  routineId?: string;
+  eventDate: string;
+  startTime: string;
+  duration: string;
+  location?: string;
+  notes?: string;
+};
 
 export default function Calendar() {
   const { toast } = useToast();
@@ -79,27 +65,26 @@ export default function Calendar() {
     enabled: isAuthenticated,
   });
 
-  const form = useForm<EventFormData>({
-    resolver: zodResolver(eventFormSchema),
-    defaultValues: {
-      title: "",
-      startDatetime: "",
-      endDatetime: "",
-      location: "",
-      notes: "",
-      classTypeId: "",
-      routineId: "",
-      isRecurring: false,
-      recurrencePattern: "",
-    },
-  });
-
   const createEventMutation = useMutation({
     mutationFn: async (data: EventFormData) => {
+      // Get the selected class type for the title
+      const selectedClassType = classTypes?.find(ct => ct.id === data.classTypeId);
+      const title = selectedClassType?.name || "Fitness Class";
+      
+      // Calculate start and end times
+      const startDateTime = new Date(`${data.eventDate}T${data.startTime}`);
+      const endDateTime = new Date(startDateTime.getTime() + (parseInt(data.duration) * 60 * 1000));
+      
       const eventData = {
-        ...data,
-        startDatetime: new Date(data.startDatetime).toISOString(),
-        endDatetime: new Date(data.endDatetime).toISOString(),
+        title,
+        classTypeId: data.classTypeId || null,
+        routineId: data.routineId || null,
+        startDatetime: startDateTime.toISOString(),
+        endDatetime: endDateTime.toISOString(),
+        location: data.location || null,
+        notes: data.notes || null,
+        isRecurring: false,
+        recurrencePattern: null,
       };
       const response = await apiRequest("POST", "/api/calendar/events", eventData);
       return response.json();
@@ -107,7 +92,6 @@ export default function Calendar() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
       setIsCreateDialogOpen(false);
-      form.reset();
       toast({
         title: "Success",
         description: "Event created successfully",
@@ -133,7 +117,7 @@ export default function Calendar() {
     },
   });
 
-  const onSubmit = (data: EventFormData) => {
+  const handleFormSubmit = (data: EventFormData) => {
     createEventMutation.mutate(data);
   };
 
@@ -179,13 +163,6 @@ export default function Calendar() {
 
   // Helper function for quick scheduling
   const handleQuickSchedule = (date: Date, startHour: number = 9) => {
-    const startDate = new Date(date);
-    startDate.setHours(startHour, 0, 0, 0);
-    const endDate = new Date(startDate);
-    endDate.setHours(startHour + 1, 0, 0, 0);
-    
-    form.setValue('startDatetime', startDate.toISOString().slice(0, 16));
-    form.setValue('endDatetime', endDate.toISOString().slice(0, 16));
     setSelectedDate(date);
     setIsCreateDialogOpen(true);
   };
@@ -221,154 +198,16 @@ export default function Calendar() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Create New Event</DialogTitle>
+              <DialogTitle>Schedule Class</DialogTitle>
             </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Event Title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter event title" {...field} data-testid="input-event-title" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="startDatetime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Start Date & Time</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="datetime-local" 
-                            {...field} 
-                            data-testid="input-event-start"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="endDatetime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End Date & Time</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="datetime-local" 
-                            {...field} 
-                            data-testid="input-event-end"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="classTypeId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Class Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-event-class-type">
-                              <SelectValue placeholder="Select class type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">No class type</SelectItem>
-                            {classTypes?.map((classType) => (
-                              <SelectItem key={classType.id} value={classType.id}>
-                                {classType.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="routineId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Routine</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-event-routine">
-                              <SelectValue placeholder="Select routine" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">No routine</SelectItem>
-                            {routines?.map((routine) => (
-                              <SelectItem key={routine.id} value={routine.id}>
-                                {routine.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Studio A, Gym, Online, etc." 
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-event-location"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex justify-end space-x-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsCreateDialogOpen(false)}
-                    data-testid="button-cancel-event"
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={createEventMutation.isPending}
-                    data-testid="button-create-event"
-                  >
-                    {createEventMutation.isPending ? "Creating..." : "Create Event"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
+            <CalendarEventForm
+              classTypes={classTypes}
+              routines={routines}
+              selectedDate={selectedDate}
+              onSubmit={handleFormSubmit}
+              onCancel={() => setIsCreateDialogOpen(false)}
+              isLoading={createEventMutation.isPending}
+            />
           </DialogContent>
         </Dialog>
       </div>
