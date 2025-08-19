@@ -25,7 +25,12 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
-const eventFormSchema = insertCalendarEventSchema.extend({
+const eventFormSchema = insertCalendarEventSchema.omit({
+  id: true,
+  createdByUserId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   title: z.string().min(1, "Event title is required"),
   startDatetime: z.string().min(1, "Start date and time is required"),
   endDatetime: z.string().min(1, "End date and time is required"),
@@ -317,7 +322,8 @@ export default function Calendar() {
                       <FormControl>
                         <Input 
                           placeholder="Studio A, Gym, Online, etc." 
-                          {...field} 
+                          {...field}
+                          value={field.value || ""}
                           data-testid="input-event-location"
                         />
                       </FormControl>
@@ -442,7 +448,7 @@ export default function Calendar() {
                               <div className="flex items-center">
                                 <Clock className="w-4 h-4 mr-1" />
                                 <span data-testid={`event-time-${event.id}`}>
-                                  {formatTime(event.startDatetime)} - {formatTime(event.endDatetime)}
+                                  {formatTime(event.startDatetime.toString())} - {formatTime(event.endDatetime.toString())}
                                 </span>
                               </div>
                               {event.location && (
