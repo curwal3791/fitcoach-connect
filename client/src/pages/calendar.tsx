@@ -493,33 +493,14 @@ export default function Calendar() {
                       <p className="text-lg text-gray-500">No events scheduled</p>
                       <p className="text-sm text-gray-400 mb-6">Schedule a class for this day</p>
                       
-                      {/* Quick time slot buttons */}
-                      <div className="flex flex-wrap gap-2 justify-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuickSchedule(selectedDate, 9)}
-                          data-testid="button-quick-schedule-9am"
-                        >
-                          9:00 AM
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuickSchedule(selectedDate, 12)}
-                          data-testid="button-quick-schedule-12pm"
-                        >
-                          12:00 PM
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuickSchedule(selectedDate, 18)}
-                          data-testid="button-quick-schedule-6pm"
-                        >
-                          6:00 PM
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={() => handleQuickSchedule(selectedDate)}
+                        className="bg-primary hover:bg-primary/90 mb-4"
+                        data-testid="button-add-event-empty-day"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Event
+                      </Button>
                     </div>
                   )}
                 </div>

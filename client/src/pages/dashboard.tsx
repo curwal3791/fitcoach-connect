@@ -67,10 +67,16 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
-  const { data: todayEvents, isLoading: eventsLoading } = useQuery<TodayClass[]>({
+  const { data: allEvents, isLoading: eventsLoading } = useQuery<TodayClass[]>({
     queryKey: ["/api/calendar/events"],
     enabled: isAuthenticated,
   });
+
+  // Get upcoming 5 events
+  const upcomingEvents = allEvents
+    ?.filter(event => new Date(event.startDatetime) >= new Date())
+    ?.sort((a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime())
+    ?.slice(0, 5) || [];
 
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -235,11 +241,11 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Today's Schedule */}
+        {/* Upcoming Schedule */}
         <div>
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl font-semibold text-gray-900">Today's Schedule</CardTitle>
+              <CardTitle className="text-xl font-semibold text-gray-900">Upcoming Schedule</CardTitle>
             </CardHeader>
             <CardContent>
               {eventsLoading ? (
@@ -248,9 +254,9 @@ export default function Dashboard() {
                     <Skeleton key={i} className="h-16 w-full" />
                   ))}
                 </div>
-              ) : todayEvents && todayEvents.length > 0 ? (
+              ) : upcomingEvents && upcomingEvents.length > 0 ? (
                 <div className="space-y-4">
-                  {todayEvents.slice(0, 5).map((event, index) => {
+                  {upcomingEvents.map((event, index) => {
                     const borderColor = getBorderColorForIndex(index);
                     return (
                       <div 
@@ -259,7 +265,10 @@ export default function Dashboard() {
                         data-testid={`event-item-${event.id}`}
                       >
                         <p className={`text-sm font-medium ${getBorderColorForIndex(index).replace('border-', 'text-')}`}>
-                          {formatTime(event.startDatetime)}
+                          {new Date(event.startDatetime).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric'
+                          })} - {formatTime(event.startDatetime)}
                         </p>
                         <h4 className="font-semibold text-gray-900" data-testid={`event-title-${event.id}`}>
                           {event.title}
@@ -276,7 +285,7 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-8 text-gray-500" data-testid="text-no-events">
                   <CalendarDays className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>No classes scheduled for today.</p>
+                  <p>No upcoming classes scheduled.</p>
                 </div>
               )}
             </CardContent>
