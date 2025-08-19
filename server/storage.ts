@@ -607,7 +607,14 @@ export class DatabaseStorage implements IStorage {
 
   // Calendar operations
   async getCalendarEvents(userId: string, startDate?: Date, endDate?: Date): Promise<(CalendarEvent & { classType?: ClassType; routine?: Routine })[]> {
-    let query = db
+    const conditions = [eq(calendarEvents.userId, userId)];
+    
+    if (startDate && endDate) {
+      conditions.push(sql`${calendarEvents.startDatetime} >= ${startDate}`);
+      conditions.push(sql`${calendarEvents.endDatetime} <= ${endDate}`);
+    }
+    
+    const results = await db
       .select({
         event: calendarEvents,
         classType: classTypes,
@@ -616,18 +623,8 @@ export class DatabaseStorage implements IStorage {
       .from(calendarEvents)
       .leftJoin(classTypes, eq(calendarEvents.classTypeId, classTypes.id))
       .leftJoin(routines, eq(calendarEvents.routineId, routines.id))
-      .where(eq(calendarEvents.userId, userId));
-
-    const conditions = [eq(calendarEvents.userId, userId)];
-    
-    if (startDate && endDate) {
-      conditions.push(sql`${calendarEvents.startDatetime} >= ${startDate}`);
-      conditions.push(sql`${calendarEvents.endDatetime} <= ${endDate}`);
-    }
-    
-    query = query.where(and(...conditions));
-
-    const results = await query.orderBy(calendarEvents.startDatetime);
+      .where(and(...conditions))
+      .orderBy(calendarEvents.startDatetime);
 
     return results.map(row => ({
       ...row.event,
@@ -660,18 +657,6 @@ export class DatabaseStorage implements IStorage {
     createdBy: User;
     exerciseCount: number 
   })[]> {
-    let query = db
-      .select({
-        routine: routines,
-        classType: classTypes,
-        createdBy: users,
-        exerciseCount: sql<number>`COUNT(${routineExercises.id})::int`,
-      })
-      .from(routines)
-      .leftJoin(classTypes, eq(routines.classTypeId, classTypes.id))
-      .innerJoin(users, eq(routines.createdByUserId, users.id))
-      .leftJoin(routineExercises, eq(routines.id, routineExercises.routineId));
-
     const conditions = [eq(routines.isPublic, true)];
 
     if (filters?.search) {
@@ -681,9 +666,18 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(routines.classTypeId, filters.classType));
     }
 
-    query = query.where(and(...conditions));
-
-    const results = await query
+    const results = await db
+      .select({
+        routine: routines,
+        classType: classTypes,
+        createdBy: users,
+        exerciseCount: sql<number>`COUNT(${routineExercises.id})::int`,
+      })
+      .from(routines)
+      .leftJoin(classTypes, eq(routines.classTypeId, classTypes.id))
+      .innerJoin(users, eq(routines.createdByUserId, users.id))
+      .leftJoin(routineExercises, eq(routines.id, routineExercises.routineId))
+      .where(and(...conditions))
       .groupBy(routines.id, classTypes.id, users.id)
       .orderBy(desc(routines.createdAt));
 

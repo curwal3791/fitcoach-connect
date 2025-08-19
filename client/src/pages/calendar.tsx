@@ -27,13 +27,16 @@ import { z } from "zod";
 
 const eventFormSchema = insertCalendarEventSchema.omit({
   id: true,
-  createdByUserId: true,
+  userId: true,
   createdAt: true,
-  updatedAt: true,
 }).extend({
   title: z.string().min(1, "Event title is required"),
   startDatetime: z.string().min(1, "Start date and time is required"),
   endDatetime: z.string().min(1, "End date and time is required"),
+  location: z.string().optional(),
+  notes: z.string().optional(),
+  classTypeId: z.string().optional(),
+  routineId: z.string().optional(),
 });
 
 type EventFormData = z.infer<typeof eventFormSchema>;
@@ -86,6 +89,8 @@ export default function Calendar() {
       notes: "",
       classTypeId: "",
       routineId: "",
+      isRecurring: false,
+      recurrencePattern: "",
     },
   });
 
@@ -170,6 +175,19 @@ export default function Calendar() {
       'bg-purple-500/10 text-purple-600 border-purple-500',
     ];
     return colors[index % colors.length];
+  };
+
+  // Helper function for quick scheduling
+  const handleQuickSchedule = (date: Date, startHour: number = 9) => {
+    const startDate = new Date(date);
+    startDate.setHours(startHour, 0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setHours(startHour + 1, 0, 0, 0);
+    
+    form.setValue('startDatetime', startDate.toISOString().slice(0, 16));
+    form.setValue('endDatetime', endDate.toISOString().slice(0, 16));
+    setSelectedDate(date);
+    setIsCreateDialogOpen(true);
   };
 
   if (isLoading) {
@@ -395,6 +413,7 @@ export default function Calendar() {
                     <button
                       key={i}
                       onClick={() => setSelectedDate(startDate)}
+                      onDoubleClick={() => handleQuickSchedule(startDate)}
                       className={`
                         p-1 text-xs rounded hover:bg-gray-100 transition-colors relative
                         ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
@@ -402,6 +421,7 @@ export default function Calendar() {
                         ${isSelected && !isToday ? 'bg-gray-200' : ''}
                       `}
                       data-testid={`calendar-date-${startDate.toISOString().split('T')[0]}`}
+                      title="Double-click to quickly schedule a class"
                     >
                       {startDate.getDate()}
                       {hasEvents && (
@@ -480,7 +500,35 @@ export default function Calendar() {
                     <div className="text-center py-12" data-testid="text-no-events">
                       <CalendarIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                       <p className="text-lg text-gray-500">No events scheduled</p>
-                      <p className="text-sm text-gray-400">Add an event to get started</p>
+                      <p className="text-sm text-gray-400 mb-6">Schedule a class for this day</p>
+                      
+                      {/* Quick time slot buttons */}
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleQuickSchedule(selectedDate, 9)}
+                          data-testid="button-quick-schedule-9am"
+                        >
+                          9:00 AM
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleQuickSchedule(selectedDate, 12)}
+                          data-testid="button-quick-schedule-12pm"
+                        >
+                          12:00 PM
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleQuickSchedule(selectedDate, 18)}
+                          data-testid="button-quick-schedule-6pm"
+                        >
+                          6:00 PM
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
