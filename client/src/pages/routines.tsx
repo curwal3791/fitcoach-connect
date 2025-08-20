@@ -29,14 +29,10 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
-const routineFormSchema = insertRoutineSchema.omit({
-  id: true,
-  createdByUserId: true, 
-  createdAt: true,
-  updatedAt: true,
-  totalDuration: true,
-}).extend({
+const routineFormSchema = z.object({
   name: z.string().min(1, "Routine name is required"),
+  description: z.string().optional(),
+  classTypeId: z.string().optional(),
 });
 
 type RoutineFormData = z.infer<typeof routineFormSchema>;
@@ -102,7 +98,6 @@ export default function Routines() {
       name: "",
       description: "",
       classTypeId: "",
-      isPublic: false,
     },
   });
 
@@ -293,11 +288,22 @@ export default function Routines() {
     removeExerciseFromRoutineMutation.mutate(id);
   };
 
-  const handleReorderExercises = (exerciseIds: string[]) => {
-    // TODO: Implement reorder API call
-    toast({
-      title: "Feature Coming Soon",
-      description: "Exercise reordering will be available soon",
+  const handleReorderExercises = (fromIndex: number, toIndex: number) => {
+    if (!(selectedRoutine as any)?.exercises) return;
+    
+    const exercises = [...(selectedRoutine as any).exercises];
+    const [movedExercise] = exercises.splice(fromIndex, 1);
+    exercises.splice(toIndex, 0, movedExercise);
+    
+    // Update order indices
+    const updates = exercises.map((exercise: any, index: number) => ({
+      id: exercise.id,
+      orderIndex: index
+    }));
+    
+    // Update each exercise with new order index
+    updates.forEach(({ id, orderIndex }) => {
+      updateRoutineExerciseMutation.mutate({ id, data: { orderIndex } });
     });
   };
 

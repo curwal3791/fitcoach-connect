@@ -183,12 +183,7 @@ export default function RoutineBuilder({
   };
 
   const handleExerciseReorder = (fromIndex: number, toIndex: number) => {
-    const newOrder = [...routineExercises];
-    const [movedItem] = newOrder.splice(fromIndex, 1);
-    newOrder.splice(toIndex, 0, movedItem);
-    
-    const reorderedIds = newOrder.map(item => item.id);
-    onReorderExercises(reorderedIds);
+    onReorderExercises(fromIndex, toIndex);
   };
 
   return (
@@ -583,7 +578,7 @@ export default function RoutineBuilder({
                             onClick={() => {
                               const currentIndex = routineExercises.findIndex(ex => ex.id === routineExercise.id);
                               if (currentIndex > 0) {
-                                onReorderExercises(currentIndex, currentIndex - 1);
+                                handleExerciseReorder(currentIndex, currentIndex - 1);
                               }
                             }}
                             disabled={index === 0}
@@ -597,7 +592,7 @@ export default function RoutineBuilder({
                             onClick={() => {
                               const currentIndex = routineExercises.findIndex(ex => ex.id === routineExercise.id);
                               if (currentIndex < routineExercises.length - 1) {
-                                onReorderExercises(currentIndex, currentIndex + 1);
+                                handleExerciseReorder(currentIndex, currentIndex + 1);
                               }
                             }}
                             disabled={index === routineExercises.length - 1}
