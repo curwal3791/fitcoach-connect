@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Trash2, GripVertical, Plus, Search } from "lucide-react";
+import { ChevronUp, ChevronDown, Trash2, Plus, Search } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,7 +29,7 @@ interface RoutineBuilderProps {
   onAddExercise: (exerciseId: string, orderIndex: number) => void;
   onUpdateExercise: (id: string, data: Partial<RoutineExercise>) => void;
   onRemoveExercise: (id: string) => void;
-  onReorderExercises: (exerciseIds: string[]) => void;
+  onReorderExercises: (fromIndex: number, toIndex: number) => void;
   routineName: string;
   onRoutineNameChange: (name: string) => void;
   totalDuration: number;
@@ -577,16 +577,42 @@ export default function RoutineBuilder({
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm" data-testid={`button-drag-${routineExercise.id}`}>
-                            <GripVertical className="w-4 h-4 text-gray-400" />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => {
+                              const currentIndex = routineExercises.findIndex(ex => ex.id === routineExercise.id);
+                              if (currentIndex > 0) {
+                                onReorderExercises(currentIndex, currentIndex - 1);
+                              }
+                            }}
+                            disabled={index === 0}
+                            data-testid={`button-move-up-${routineExercise.id}`}
+                          >
+                            <ChevronUp className="w-4 h-4 text-gray-400" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => {
+                              const currentIndex = routineExercises.findIndex(ex => ex.id === routineExercise.id);
+                              if (currentIndex < routineExercises.length - 1) {
+                                onReorderExercises(currentIndex, currentIndex + 1);
+                              }
+                            }}
+                            disabled={index === routineExercises.length - 1}
+                            data-testid={`button-move-down-${routineExercise.id}`}
+                          >
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
                           </Button>
                           <Button 
                             variant="ghost" 
                             size="sm" 
                             onClick={() => onRemoveExercise(routineExercise.id)}
+                            className="text-red-400 hover:text-red-600"
                             data-testid={`button-remove-${routineExercise.id}`}
                           >
-                            <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
