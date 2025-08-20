@@ -18,16 +18,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { insertExerciseSchema, type Exercise, type RoutineExercise, type ClassType } from "@shared/schema";
 import { z } from "zod";
 
-const exerciseFormSchema = insertExerciseSchema.omit({
-  id: true,
-  createdByUserId: true,
-  isPublic: true,
-  createdAt: true,
-}).extend({
-  name: z.string().min(1, "Exercise name is required"),
-  category: z.enum(["strength", "cardio", "flexibility", "balance"]),
-  difficultyLevel: z.enum(["Beginner", "Intermediate", "Advanced"]),
-});
+const exerciseFormSchema = insertExerciseSchema;
 
 type ExerciseFormData = z.infer<typeof exerciseFormSchema>;
 
@@ -64,6 +55,8 @@ export default function RoutineBuilder({
   const [selectedCategory, setSelectedCategory] = useState("");
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [isCreateExerciseDialogOpen, setIsCreateExerciseDialogOpen] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<RoutineExercise | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -245,7 +238,8 @@ export default function RoutineBuilder({
                             <FormControl>
                               <Textarea 
                                 placeholder="Describe the exercise..." 
-                                {...field} 
+                                {...field}
+                                value={field.value || ""}
                                 data-testid="input-new-exercise-description"
                               />
                             </FormControl>
@@ -311,7 +305,7 @@ export default function RoutineBuilder({
                             <FormItem>
                               <FormLabel>Equipment Needed</FormLabel>
                               <FormControl>
-                                <Input placeholder="e.g., Dumbbells, Mat" {...field} data-testid="input-new-exercise-equipment" />
+                                <Input placeholder="e.g., Dumbbells, Mat" {...field} value={field.value || ""} data-testid="input-new-exercise-equipment" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -329,6 +323,7 @@ export default function RoutineBuilder({
                                   type="number" 
                                   placeholder="5" 
                                   {...field}
+                                  value={field.value || ""}
                                   onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                                   data-testid="input-new-exercise-calories"
                                 />
@@ -346,7 +341,7 @@ export default function RoutineBuilder({
                           <FormItem>
                             <FormLabel>Primary Muscles</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g., Chest, Shoulders" {...field} data-testid="input-new-exercise-primary" />
+                              <Input placeholder="e.g., Chest, Shoulders" {...field} value={field.value || ""} data-testid="input-new-exercise-primary" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -362,7 +357,8 @@ export default function RoutineBuilder({
                             <FormControl>
                               <Textarea 
                                 placeholder="Alternative variations for beginners or advanced..." 
-                                {...field} 
+                                {...field}
+                                value={field.value || ""}
                                 data-testid="input-new-exercise-modifications"
                               />
                             </FormControl>
@@ -380,7 +376,8 @@ export default function RoutineBuilder({
                             <FormControl>
                               <Textarea 
                                 placeholder="Important safety considerations..." 
-                                {...field} 
+                                {...field}
+                                value={field.value || ""}
                                 data-testid="input-new-exercise-safety"
                               />
                             </FormControl>
@@ -550,129 +547,151 @@ export default function RoutineBuilder({
               </div>
             </div>
 
-            {/* Routine Exercises Table */}
+            {/* Routine Exercises - Card Layout */}
             {routineExercises.length > 0 && (
-              <div className="bg-gray-50 rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">#</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">Exercise</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">Duration</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">Reps/Sets</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">Rest</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">Music</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {routineExercises.map((routineExercise, index) => (
-                        <tr 
-                          key={routineExercise.id} 
-                          className="border-b border-gray-200 hover:bg-white transition-colors"
-                          data-testid={`routine-exercise-${routineExercise.id}`}
-                        >
-                          <td className="py-4 px-4 text-sm font-medium text-gray-900">
+              <div className="space-y-4">
+                {routineExercises.map((routineExercise, index) => (
+                  <Card 
+                    key={routineExercise.id}
+                    className="border-l-4 border-l-primary"
+                    data-testid={`routine-exercise-${routineExercise.id}`}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center">
+                          <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold mr-4">
                             {index + 1}
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center">
-                              <div className={`w-8 h-8 ${getCategoryColor(routineExercise.exercise.category)} rounded-md flex items-center justify-center mr-3`}>
-                                <span className="text-xs">{getCategoryIcon(routineExercise.exercise.category)}</span>
-                              </div>
-                              <span className="font-medium text-gray-900" data-testid={`exercise-name-${routineExercise.id}`}>
-                                {routineExercise.exercise.name}
-                              </span>
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900" data-testid={`exercise-name-${routineExercise.id}`}>
+                              {routineExercise.exercise.name}
+                            </h3>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Badge variant="outline" className="text-xs">
+                                {routineExercise.exercise.category}
+                              </Badge>
+                              <span className="text-sm text-gray-600">{routineExercise.exercise.primaryMuscles}</span>
                             </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center">
-                              <Input
-                                type="number"
-                                value={routineExercise.durationSeconds || ''}
-                                onChange={(e) => onUpdateExercise(routineExercise.id, { 
-                                  durationSeconds: parseInt(e.target.value) || 0 
-                                })}
-                                className="w-16 text-sm"
-                                placeholder="60"
-                                data-testid={`input-duration-${routineExercise.id}`}
-                              />
-                              <span className="text-sm text-gray-600 ml-1">sec</span>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center space-x-2">
-                              <Input
-                                type="number"
-                                value={routineExercise.repetitions || ''}
-                                onChange={(e) => onUpdateExercise(routineExercise.id, { 
-                                  repetitions: parseInt(e.target.value) || 0 
-                                })}
-                                className="w-12 text-sm"
-                                placeholder="15"
-                                data-testid={`input-reps-${routineExercise.id}`}
-                              />
-                              <span className="text-sm text-gray-600">x</span>
-                              <Input
-                                type="number"
-                                value={routineExercise.sets || ''}
-                                onChange={(e) => onUpdateExercise(routineExercise.id, { 
-                                  sets: parseInt(e.target.value) || 0 
-                                })}
-                                className="w-12 text-sm"
-                                placeholder="3"
-                                data-testid={`input-sets-${routineExercise.id}`}
-                              />
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center">
-                              <Input
-                                type="number"
-                                value={routineExercise.restSeconds || ''}
-                                onChange={(e) => onUpdateExercise(routineExercise.id, { 
-                                  restSeconds: parseInt(e.target.value) || 0 
-                                })}
-                                className="w-16 text-sm"
-                                placeholder="30"
-                                data-testid={`input-rest-${routineExercise.id}`}
-                              />
-                              <span className="text-sm text-gray-600 ml-1">sec</span>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button variant="ghost" size="sm" data-testid={`button-drag-${routineExercise.id}`}>
+                            <GripVertical className="w-4 h-4 text-gray-400" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => onRemoveExercise(routineExercise.id)}
+                            data-testid={`button-remove-${routineExercise.id}`}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">Duration</Label>
+                          <div className="flex items-center mt-1">
+                            <Input
+                              type="number"
+                              value={routineExercise.durationSeconds || ''}
+                              onChange={(e) => onUpdateExercise(routineExercise.id, { 
+                                durationSeconds: parseInt(e.target.value) || 0 
+                              })}
+                              className="w-20 text-sm"
+                              placeholder="60"
+                              data-testid={`input-duration-${routineExercise.id}`}
+                            />
+                            <span className="text-sm text-gray-600 ml-2">seconds</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">Repetitions</Label>
+                          <Input
+                            type="number"
+                            value={routineExercise.repetitions || ''}
+                            onChange={(e) => onUpdateExercise(routineExercise.id, { 
+                              repetitions: parseInt(e.target.value) || 0 
+                            })}
+                            className="w-20 text-sm mt-1"
+                            placeholder="15"
+                            data-testid={`input-reps-${routineExercise.id}`}
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">Sets</Label>
+                          <Input
+                            type="number"
+                            value={routineExercise.sets || ''}
+                            onChange={(e) => onUpdateExercise(routineExercise.id, { 
+                              sets: parseInt(e.target.value) || 0 
+                            })}
+                            className="w-20 text-sm mt-1"
+                            placeholder="3"
+                            data-testid={`input-sets-${routineExercise.id}`}
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">Rest Time</Label>
+                          <div className="flex items-center mt-1">
+                            <Input
+                              type="number"
+                              value={routineExercise.restSeconds || ''}
+                              onChange={(e) => onUpdateExercise(routineExercise.id, { 
+                                restSeconds: parseInt(e.target.value) || 0 
+                              })}
+                              className="w-20 text-sm"
+                              placeholder="30"
+                              data-testid={`input-rest-${routineExercise.id}`}
+                            />
+                            <span className="text-sm text-gray-600 ml-2">seconds</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Music Section - Much More Space */}
+                      <div className="border-t pt-4">
+                        <Label className="text-sm font-medium text-gray-700 mb-2 block">Music & Song Assignment</Label>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          <div>
                             <Input
                               type="text"
                               value={routineExercise.musicTitle || ''}
                               onChange={(e) => onUpdateExercise(routineExercise.id, { 
                                 musicTitle: e.target.value 
                               })}
-                              className="w-full text-sm"
-                              placeholder="Song title - Artist"
+                              className="w-full"
+                              placeholder="Song Title - Artist Name"
                               data-testid={`input-music-${routineExercise.id}`}
                             />
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center space-x-2">
-                              <Button variant="ghost" size="sm" data-testid={`button-drag-${routineExercise.id}`}>
-                                <GripVertical className="w-4 h-4 text-gray-400" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => onRemoveExercise(routineExercise.id)}
-                                data-testid={`button-remove-${routineExercise.id}`}
-                              >
-                                <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Example: "Eye of the Tiger - Survivor" or "Pump It - Black Eyed Peas"
+                            </p>
+                          </div>
+                          <div>
+                            <Input
+                              type="text"
+                              value={routineExercise.musicNotes || ''}
+                              onChange={(e) => onUpdateExercise(routineExercise.id, { 
+                                musicNotes: e.target.value 
+                              })}
+                              className="w-full"
+                              placeholder="Music notes (BPM, energy level, cues)"
+                              data-testid={`input-music-notes-${routineExercise.id}`}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Example: "130 BPM, High energy, Start at chorus"
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
           </CardContent>

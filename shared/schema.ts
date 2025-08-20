@@ -94,8 +94,7 @@ export const routineExercises = pgTable("routine_exercises", {
   sets: integer("sets"),
   restSeconds: integer("rest_seconds"),
   musicTitle: varchar("music_title"),
-  musicArtist: varchar("music_artist"),
-  musicBpm: integer("music_bpm"),
+  musicNotes: text("music_notes"),
   notes: text("notes"),
 });
 
