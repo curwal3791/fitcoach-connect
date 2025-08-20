@@ -570,7 +570,9 @@ export default function RoutineBuilder({
                               <Badge variant="outline" className="text-xs">
                                 {routineExercise.exercise.category}
                               </Badge>
-                              <span className="text-sm text-gray-600">{routineExercise.exercise.primaryMuscles}</span>
+                              {routineExercise.exercise.primaryMuscles && (
+                                <span className="text-sm text-gray-600">{routineExercise.exercise.primaryMuscles}</span>
+                              )}
                             </div>
                           </div>
                         </div>
