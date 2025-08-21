@@ -396,9 +396,10 @@ export default function Presentation() {
                 onClick={toggleFullscreen}
                 variant="outline"
                 size="sm"
+                className="border-gray-500 text-white hover:bg-gray-600"
                 data-testid="button-enter-fullscreen"
               >
-                <Maximize2 className="w-4 h-4" />
+                <Maximize2 className="w-4 h-4 text-white" />
               </Button>
             )}
             {isFullscreen && (
@@ -406,17 +407,19 @@ export default function Presentation() {
                 onClick={toggleFullscreen}
                 variant="outline"
                 size="sm"
+                className="border-gray-500 text-white hover:bg-gray-600"
                 data-testid="button-exit-fullscreen"
               >
-                <Minimize2 className="w-4 h-4" />
+                <Minimize2 className="w-4 h-4 text-white" />
               </Button>
             )}
             <Button 
               onClick={handleStop}
               variant="destructive"
+              className="bg-red-600 hover:bg-red-700"
               data-testid="button-end-session"
             >
-              <Square className="w-4 h-4 mr-2" />
+              <Square className="w-4 h-4 mr-2 text-white" />
               End Session
             </Button>
           </div>
@@ -529,34 +532,37 @@ export default function Presentation() {
               disabled={currentExerciseIndex === 0}
               variant="outline"
               size="lg"
+              className="border-gray-500 text-white hover:bg-gray-600"
               data-testid="button-previous-exercise"
             >
-              <SkipBack className="w-6 h-6" />
+              <SkipBack className="w-6 h-6 text-white" />
             </Button>
             <Button 
               onClick={handlePlayPause}
               size="lg"
-              className="px-8"
+              className="px-8 bg-primary hover:bg-primary/90"
               data-testid="button-play-pause"
             >
-              {!hasStarted ? <Play className="w-6 h-6" /> : (isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />)}
+              {!hasStarted ? <Play className="w-6 h-6 text-white" /> : (isPlaying ? <Pause className="w-6 h-6 text-white" /> : <Play className="w-6 h-6 text-white" />)}
             </Button>
             <Button 
               onClick={handleNextExercise}
               disabled={!selectedRoutine?.exercises || currentExerciseIndex >= selectedRoutine.exercises.length - 1}
               variant="outline"
               size="lg"
+              className="border-gray-500 text-white hover:bg-gray-600"
               data-testid="button-next-exercise"
             >
-              <SkipForward className="w-6 h-6" />
+              <SkipForward className="w-6 h-6 text-white" />
             </Button>
             <Button 
               onClick={handleAddTime}
               variant="outline"
               size="lg"
+              className="border-gray-500 text-white hover:bg-gray-600"
               data-testid="button-add-time"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4 mr-2 text-white" />
               +30s
             </Button>
           </div>
