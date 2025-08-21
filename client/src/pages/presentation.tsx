@@ -246,44 +246,100 @@ export default function Presentation() {
           <p className="text-gray-600 mt-1">Select a routine to start your presentation</p>
         </div>
 
-        <Card className="max-w-md mx-auto">
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="routine-select" className="block text-sm font-medium text-gray-700 mb-2">
-                  Choose Routine
-                </label>
-                <Select onValueChange={setSelectedRoutineId}>
-                  <SelectTrigger data-testid="select-presentation-routine">
-                    <SelectValue placeholder="Select a routine..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {routinesLoading ? (
-                      <div className="p-2">Loading routines...</div>
-                    ) : routines && routines.length > 0 ? (
-                      routines.map((routine) => (
-                        <SelectItem key={routine.id} value={routine.id}>
-                          {routine.name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-2 text-gray-500">No routines available</div>
-                    )}
-                  </SelectContent>
-                </Select>
+        <div className="max-w-4xl mx-auto">
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="routine-select" className="block text-sm font-medium text-gray-700 mb-2">
+                    Choose Routine
+                  </label>
+                  <Select onValueChange={setSelectedRoutineId}>
+                    <SelectTrigger data-testid="select-presentation-routine">
+                      <SelectValue placeholder="Select a routine..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {routinesLoading ? (
+                        <div className="p-2">Loading routines...</div>
+                      ) : routines && routines.length > 0 ? (
+                        routines.map((routine) => (
+                          <SelectItem key={routine.id} value={routine.id}>
+                            {routine.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-gray-500">No routines available</div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={toggleFullscreen}
+                  variant="outline" 
+                  className="w-full"
+                  data-testid="button-fullscreen"
+                >
+                  <Maximize2 className="w-4 h-4 mr-2" />
+                  Enter Fullscreen Mode
+                </Button>
               </div>
-              <Button 
-                onClick={toggleFullscreen}
-                variant="outline" 
-                className="w-full"
-                data-testid="button-fullscreen"
-              >
-                <Maximize2 className="w-4 h-4 mr-2" />
-                Enter Fullscreen
-              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Routine Preview Cards */}
+          {routines && routines.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {routines.map((routine) => (
+                <Card 
+                  key={routine.id} 
+                  className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-primary"
+                  onClick={() => setSelectedRoutineId(routine.id)}
+                  data-testid={`routine-preview-${routine.id}`}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          {routine.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {routine.description || "No description"}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedRoutineId(routine.id);
+                        }}
+                        data-testid={`button-select-routine-${routine.id}`}
+                      >
+                        <Play className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <div className="flex items-center space-x-4">
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 bg-blue-400 rounded-full mr-1"></span>
+                          {routine.exerciseCount || 0} exercises
+                        </span>
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                          {Math.round((routine.totalDuration || 0) / 60)}min
+                        </span>
+                      </div>
+                      <div className="text-xs bg-gray-100 px-2 py-1 rounded">
+                        {routine.classType?.name || "General"}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
     );
   }
@@ -360,12 +416,28 @@ export default function Presentation() {
             <div className="bg-gray-800 rounded-2xl p-8 flex-1 flex flex-col justify-center">
               <div className="text-center">
                 <div className="mb-8">
+                  <div className="flex items-center justify-center mb-4">
+                    <div className={`inline-flex items-center px-4 py-2 rounded-full text-white text-lg font-medium ${getCategoryColor(currentExercise.exercise.category)} mr-4`}>
+                      <span className="mr-2">{getCategoryIcon(currentExercise.exercise.category)}</span>
+                      {currentExercise.exercise.category}
+                    </div>
+                    <div className="bg-gray-700 px-3 py-1 rounded-full text-sm">
+                      {currentExercise.exercise.difficultyLevel}
+                    </div>
+                  </div>
                   <h2 className="text-6xl font-bold mb-4" data-testid="presentation-current-exercise">
                     {currentExercise.exercise.name}
                   </h2>
                   <p className="text-2xl text-gray-300" data-testid="presentation-current-description">
                     {currentExercise.exercise.description || "Follow the exercise instructions"}
                   </p>
+                  {currentExercise.exercise.equipmentNeeded && currentExercise.exercise.equipmentNeeded !== 'None' && (
+                    <div className="mt-4 flex items-center justify-center">
+                      <div className="bg-yellow-600 px-4 py-2 rounded-full text-sm font-medium">
+                        🏋️ Equipment: {currentExercise.exercise.equipmentNeeded}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Timer Circle */}
