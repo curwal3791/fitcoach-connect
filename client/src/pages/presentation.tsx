@@ -65,8 +65,7 @@ export default function Presentation() {
       timerRef.current = setInterval(() => {
         setTimeRemaining((prev) => {
           if (prev <= 1) {
-            setIsPlaying(false);
-            handleNextExercise();
+            handleNextExercise(); // Auto-advance to next exercise
             return 0;
           }
           return prev - 1;
@@ -85,12 +84,12 @@ export default function Presentation() {
     };
   }, [isPlaying, timeRemaining]);
 
-  // Set initial time when exercise changes
+  // Set initial time when exercise changes and auto-start
   useEffect(() => {
     if (selectedRoutine?.exercises && selectedRoutine.exercises[currentExerciseIndex]) {
       const exercise = selectedRoutine.exercises[currentExerciseIndex];
       setTimeRemaining(exercise.durationSeconds || 60);
-      setIsPlaying(false);
+      setIsPlaying(true); // Auto-start each exercise
     }
   }, [currentExerciseIndex, selectedRoutine]);
 
@@ -416,15 +415,6 @@ export default function Presentation() {
             <div className="bg-gray-800 rounded-2xl p-8 flex-1 flex flex-col justify-center">
               <div className="text-center">
                 <div className="mb-8">
-                  <div className="flex items-center justify-center mb-4">
-                    <div className={`inline-flex items-center px-4 py-2 rounded-full text-white text-lg font-medium ${getCategoryColor(currentExercise.exercise.category)} mr-4`}>
-                      <span className="mr-2">{getCategoryIcon(currentExercise.exercise.category)}</span>
-                      {currentExercise.exercise.category}
-                    </div>
-                    <div className="bg-gray-700 px-3 py-1 rounded-full text-sm">
-                      {currentExercise.exercise.difficultyLevel}
-                    </div>
-                  </div>
                   <h2 className="text-6xl font-bold mb-4" data-testid="presentation-current-exercise">
                     {currentExercise.exercise.name}
                   </h2>
@@ -560,6 +550,13 @@ export default function Presentation() {
               +30s
             </Button>
           </div>
+          
+          {/* Auto-flow indicator */}
+          <div className="text-center mt-4">
+            <p className="text-sm text-gray-400">
+              Exercises advance automatically • Press spacebar to pause/resume
+            </p>
+          </div>
         </div>
 
         {/* Upcoming Exercises */}
@@ -570,8 +567,8 @@ export default function Presentation() {
               {upcomingExercises.map((exercise, index) => (
                 <div key={exercise.id} className="bg-gray-700 rounded-lg p-4" data-testid={`upcoming-exercise-${index}`}>
                   <div className="flex items-center mb-2">
-                    <div className={`w-8 h-8 ${getCategoryColor(exercise.exercise.category)} rounded-lg flex items-center justify-center mr-3`}>
-                      <span className="text-sm">{getCategoryIcon(exercise.exercise.category)}</span>
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-sm">🏃</span>
                     </div>
                     <div>
                       <h4 className="font-medium" data-testid={`upcoming-exercise-name-${index}`}>
