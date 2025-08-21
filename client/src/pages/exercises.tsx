@@ -18,19 +18,20 @@ import ExerciseCard from "@/components/exercise-card";
 import { Plus, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertExerciseSchema, type Exercise, type InsertExercise } from "@shared/schema";
+import { insertExerciseSchema, type Exercise, type InsertExercise, type ClassType } from "@shared/schema";
 import { z } from "zod";
 
 const exerciseFormSchema = z.object({
   name: z.string().min(1, "Exercise name is required"),
   description: z.string().optional(),
   difficultyLevel: z.enum(["Beginner", "Intermediate", "Advanced"]),
-  category: z.enum(["strength", "cardio", "flexibility", "balance"]),
+  category: z.enum(["strength", "cardio", "flexibility", "balance", "sports", "rehabilitation"]),
   equipmentNeeded: z.string().nullable().optional(),
   primaryMuscles: z.string().nullable().optional(),
   secondaryMuscles: z.string().nullable().optional(),
   modifications: z.string().optional(),
   safetyNotes: z.string().optional(),
+  classTypeId: z.string().optional(),
   isPublic: z.boolean().optional(),
 });
 
@@ -81,6 +82,11 @@ export default function Exercises() {
     enabled: isAuthenticated,
   });
 
+  const { data: classTypes, isLoading: classTypesLoading } = useQuery<ClassType[]>({
+    queryKey: ["/api/class-types"],
+    enabled: isAuthenticated,
+  });
+
   const form = useForm<ExerciseFormData>({
     resolver: zodResolver(exerciseFormSchema),
     defaultValues: {
@@ -93,13 +99,19 @@ export default function Exercises() {
       secondaryMuscles: "",
       modifications: "",
       safetyNotes: "",
+      classTypeId: "none",
       isPublic: false,
     },
   });
 
   const createExerciseMutation = useMutation({
     mutationFn: async (data: ExerciseFormData) => {
-      const response = await apiRequest("POST", "/api/exercises", data);
+      // Convert "none" to null for the API
+      const processedData = {
+        ...data,
+        classTypeId: data.classTypeId === "none" ? null : data.classTypeId
+      };
+      const response = await apiRequest("POST", "/api/exercises", processedData);
       return response.json();
     },
     onSuccess: () => {
@@ -225,6 +237,38 @@ export default function Exercises() {
                             <SelectItem value="cardio">Cardio</SelectItem>
                             <SelectItem value="flexibility">Flexibility</SelectItem>
                             <SelectItem value="balance">Balance</SelectItem>
+                            <SelectItem value="sports">Sports</SelectItem>
+                            <SelectItem value="rehabilitation">Rehabilitation</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="classTypeId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Class Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || "none"}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-exercise-class-type">
+                              <SelectValue placeholder="Select class type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">No specific class</SelectItem>
+                            {classTypes && classTypes.length > 0 ? (
+                              classTypes.map((classType) => (
+                                <SelectItem key={classType.id} value={classType.id}>
+                                  {classType.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-types" disabled>No class types available</SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
