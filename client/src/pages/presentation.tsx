@@ -394,32 +394,29 @@ export default function Presentation() {
             {!isFullscreen && (
               <Button 
                 onClick={toggleFullscreen}
-                variant="outline"
                 size="sm"
-                className="border-gray-500 text-white hover:bg-gray-600"
+                className="bg-gray-700 hover:bg-gray-600 text-white border-0"
                 data-testid="button-enter-fullscreen"
               >
-                <Maximize2 className="w-4 h-4 text-white" />
+                <Maximize2 className="w-4 h-4" style={{color: '#ffffff'}} />
               </Button>
             )}
             {isFullscreen && (
               <Button 
                 onClick={toggleFullscreen}
-                variant="outline"
                 size="sm"
-                className="border-gray-500 text-white hover:bg-gray-600"
+                className="bg-gray-700 hover:bg-gray-600 text-white border-0"
                 data-testid="button-exit-fullscreen"
               >
-                <Minimize2 className="w-4 h-4 text-white" />
+                <Minimize2 className="w-4 h-4" style={{color: '#ffffff'}} />
               </Button>
             )}
             <Button 
               onClick={handleStop}
-              variant="destructive"
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 text-white border-0"
               data-testid="button-end-session"
             >
-              <Square className="w-4 h-4 mr-2 text-white" />
+              <Square className="w-4 h-4 mr-2" style={{color: '#ffffff'}} />
               End Session
             </Button>
           </div>
@@ -530,39 +527,36 @@ export default function Presentation() {
             <Button 
               onClick={handlePreviousExercise}
               disabled={currentExerciseIndex === 0}
-              variant="outline"
               size="lg"
-              className="border-gray-500 text-white hover:bg-gray-600"
+              className="bg-gray-700 hover:bg-gray-600 text-white border-0"
               data-testid="button-previous-exercise"
             >
-              <SkipBack className="w-6 h-6 text-white" />
+              <SkipBack className="w-6 h-6" style={{color: '#ffffff'}} />
             </Button>
             <Button 
               onClick={handlePlayPause}
               size="lg"
-              className="px-8 bg-primary hover:bg-primary/90"
+              className="px-8 bg-blue-600 hover:bg-blue-700 text-white border-0"
               data-testid="button-play-pause"
             >
-              {!hasStarted ? <Play className="w-6 h-6 text-white" /> : (isPlaying ? <Pause className="w-6 h-6 text-white" /> : <Play className="w-6 h-6 text-white" />)}
+              {!hasStarted ? <Play className="w-6 h-6" style={{color: '#ffffff'}} /> : (isPlaying ? <Pause className="w-6 h-6" style={{color: '#ffffff'}} /> : <Play className="w-6 h-6" style={{color: '#ffffff'}} />)}
             </Button>
             <Button 
               onClick={handleNextExercise}
               disabled={!selectedRoutine?.exercises || currentExerciseIndex >= selectedRoutine.exercises.length - 1}
-              variant="outline"
               size="lg"
-              className="border-gray-500 text-white hover:bg-gray-600"
+              className="bg-gray-700 hover:bg-gray-600 text-white border-0"
               data-testid="button-next-exercise"
             >
-              <SkipForward className="w-6 h-6 text-white" />
+              <SkipForward className="w-6 h-6" style={{color: '#ffffff'}} />
             </Button>
             <Button 
               onClick={handleAddTime}
-              variant="outline"
               size="lg"
-              className="border-gray-500 text-white hover:bg-gray-600"
+              className="bg-gray-700 hover:bg-gray-600 text-white border-0"
               data-testid="button-add-time"
             >
-              <Plus className="w-4 h-4 mr-2 text-white" />
+              <Plus className="w-4 h-4 mr-2" style={{color: '#ffffff'}} />
               +30s
             </Button>
           </div>
