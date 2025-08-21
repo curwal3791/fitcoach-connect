@@ -2,10 +2,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Plus, Trash2 } from "lucide-react";
-import type { Exercise } from "@shared/schema";
+import type { Exercise, ClassType } from "@shared/schema";
 
 interface ExerciseCardProps {
-  exercise: Exercise;
+  exercise: Exercise & { classType?: ClassType | null };
   onEdit?: (exercise: Exercise) => void;
   onDelete?: (exercise: Exercise) => void;
   onAddToRoutine?: (exercise: Exercise) => void;
@@ -45,6 +45,17 @@ export default function ExerciseCard({ exercise, onEdit, onDelete, onAddToRoutin
           </h3>
           <Badge className={difficultyColor} data-testid={`exercise-difficulty-${exercise.id}`}>
             {exercise.difficultyLevel}
+          </Badge>
+        </div>
+        
+        {/* Class Type Badge */}
+        <div className="mb-3">
+          <Badge 
+            variant="secondary" 
+            className="bg-blue-50 text-blue-700 border-blue-200"
+            data-testid={`exercise-class-type-${exercise.id}`}
+          >
+            {exercise.classType ? exercise.classType.name : "None"}
           </Badge>
         </div>
         

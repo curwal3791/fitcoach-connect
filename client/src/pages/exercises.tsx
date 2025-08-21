@@ -48,6 +48,7 @@ export default function Exercises() {
     category: "all",
     difficulty: "all",
     equipment: "all",
+    classType: "all",
   });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -79,13 +80,14 @@ export default function Exercises() {
       if (filters.category !== "all") params.append("category", filters.category);
       if (filters.difficulty !== "all") params.append("difficulty", filters.difficulty);
       if (filters.equipment !== "all") params.append("equipment", filters.equipment);
+      if (filters.classType !== "all") params.append("classType", filters.classType);
       
       return fetch(`/api/exercises?${params.toString()}`).then(res => res.json());
     },
   });
 
   // Fetch class types for the dropdown
-  const { data: classTypes } = useQuery({
+  const { data: classTypes = [] } = useQuery<ClassType[]>({
     queryKey: ["/api/class-types"],
     enabled: isAuthenticated,
   });
@@ -318,6 +320,7 @@ export default function Exercises() {
                           <Textarea 
                             placeholder="Describe the exercise..." 
                             {...field} 
+                            value={field.value || ""}
                             data-testid="input-exercise-description"
                           />
                         </FormControl>
@@ -452,7 +455,7 @@ export default function Exercises() {
         {/* Filters and Search */}
         <Card className="mb-8">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
                 <Label htmlFor="search">Search</Label>
                 <div className="relative">
@@ -511,6 +514,26 @@ export default function Exercises() {
                     <SelectItem value="Dumbbells">Dumbbells</SelectItem>
                     <SelectItem value="Resistance Bands">Resistance Bands</SelectItem>
                     <SelectItem value="Mat">Mat</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="classType">Class Type</Label>
+                <Select value={filters.classType} onValueChange={(value) => setFilters({ ...filters, classType: value })}>
+                  <SelectTrigger data-testid="select-filter-class-type">
+                    <SelectValue placeholder="All Class Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Class Types</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
+                    {classTypes && classTypes.length > 0 ? (
+                      classTypes.map((classType: ClassType) => (
+                        <SelectItem key={classType.id} value={classType.id}>
+                          {classType.name}
+                        </SelectItem>
+                      ))
+                    ) : null}
                   </SelectContent>
                 </Select>
               </div>
@@ -580,6 +603,7 @@ export default function Exercises() {
                       <Textarea 
                         placeholder="Describe the exercise..." 
                         {...field} 
+                        value={field.value || ""}
                         data-testid="input-edit-exercise-description"
                       />
                     </FormControl>

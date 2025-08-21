@@ -42,8 +42,9 @@ export interface IStorage {
     category?: string;
     difficulty?: string;
     equipment?: string;
+    classType?: string;
     userId?: string;
-  }): Promise<Exercise[]>;
+  }): Promise<(Exercise & { classType?: ClassType })[]>;
   getExercise(id: string): Promise<Exercise | undefined>;
   createExercise(exercise: InsertExercise): Promise<Exercise>;
   updateExercise(id: string, exercise: Partial<InsertExercise>): Promise<Exercise>;
@@ -354,9 +355,15 @@ export class DatabaseStorage implements IStorage {
     category?: string;
     difficulty?: string;
     equipment?: string;
+    classType?: string;
     userId?: string;
-  }): Promise<Exercise[]> {
-    let query = db.select().from(exercises);
+  }): Promise<(Exercise & { classType?: ClassType })[]> {
+    // Use leftJoin to include exercises with or without class types
+    let query = db.select({
+      exercise: exercises,
+      classType: classTypes
+    }).from(exercises).leftJoin(classTypes, eq(exercises.classTypeId, classTypes.id));
+    
     const filterConditions = [];
     
     // Build filter conditions
@@ -378,6 +385,13 @@ export class DatabaseStorage implements IStorage {
         filterConditions.push(ilike(exercises.equipmentNeeded, `%${filters.equipment}%`));
       }
     }
+    if (filters?.classType && filters.classType !== 'all') {
+      if (filters.classType === 'none') {
+        filterConditions.push(sql`${exercises.classTypeId} IS NULL`);
+      } else {
+        filterConditions.push(eq(exercises.classTypeId, filters.classType));
+      }
+    }
 
     // Combine visibility and filter conditions properly
     const visibilityCondition = filters?.userId 
@@ -388,8 +402,13 @@ export class DatabaseStorage implements IStorage {
       ? and(visibilityCondition, and(...filterConditions))
       : visibilityCondition;
     
-    query = query.where(finalCondition);
-    return await query.orderBy(exercises.name);
+    const results = await query.where(finalCondition).orderBy(exercises.name);
+    
+    // Transform the results to match expected format
+    return results.map(result => ({
+      ...result.exercise,
+      classType: result.classType || undefined
+    }));
   }
 
   async getExercise(id: string): Promise<Exercise | undefined> {
@@ -520,8 +539,6 @@ export class DatabaseStorage implements IStorage {
           sets: ex.sets,
           restSeconds: ex.restSeconds,
           musicTitle: ex.musicTitle,
-          musicArtist: ex.musicArtist,
-          musicBpm: ex.musicBpm,
           notes: ex.notes,
         }))
       );

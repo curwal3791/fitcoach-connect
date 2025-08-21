@@ -97,12 +97,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/exercises', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { search, category, difficulty, equipment } = req.query;
+      const { search, category, difficulty, equipment, classType } = req.query;
       const exercises = await storage.getExercises({
         search: search as string,
         category: category as string,
         difficulty: difficulty as string,
         equipment: equipment as string,
+        classType: classType as string,
         userId,
       });
       res.json(exercises);
