@@ -219,7 +219,7 @@ export default function Dashboard() {
     createRoutineMutation.mutate({
       name: routineName.trim(),
       description: routineDescription.trim() || undefined,
-      classTypeId: selectedClassTypeId || undefined,
+      classTypeId: selectedClassTypeId && selectedClassTypeId !== "none" ? selectedClassTypeId : undefined,
     });
   };
 
@@ -521,10 +521,13 @@ export default function Dashboard() {
                     New Routine
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[425px]" aria-describedby="create-routine-description">
                   <DialogHeader>
                     <DialogTitle>Create New Routine</DialogTitle>
                   </DialogHeader>
+                  <p id="create-routine-description" className="text-sm text-gray-600 mb-4">
+                    Create a new workout routine with exercises and timing.
+                  </p>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
                       <Label htmlFor="routine-name">Routine Name</Label>
@@ -553,7 +556,7 @@ export default function Dashboard() {
                           <SelectValue placeholder="Select a class type..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No Class Type</SelectItem>
+                          <SelectItem value="none">No Class Type</SelectItem>
                           {classTypes?.map((classType) => (
                             <SelectItem key={classType.id} value={classType.id}>
                               {classType.name}
