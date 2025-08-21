@@ -93,6 +93,14 @@ export interface IStorage {
     avgDuration: number;
     classTypes: number;
   }>;
+
+  // Analytics operations
+  getAnalyticsData(userId: string): Promise<{
+    weeklyActivity: Array<{ week: string; routines: number; classes: number }>;
+    popularExercises: Array<{ name: string; count: number; category: string }>;
+    classTypeDistribution: Array<{ name: string; count: number; percentage: number }>;
+    monthlyTrends: Array<{ month: string; totalMinutes: number; avgDuration: number }>;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -801,6 +809,132 @@ export class DatabaseStorage implements IStorage {
       weeklyClasses: weeklyStats?.weeklyClasses || 0,
       avgDuration: Math.round((routineStats?.avgDuration || 0) / 60), // Convert to minutes
       classTypes: classTypeStats?.classTypes || 0,
+    };
+  }
+
+  async getAnalyticsData(userId: string): Promise<{
+    weeklyActivity: Array<{ week: string; routines: number; classes: number }>;
+    popularExercises: Array<{ name: string; count: number; category: string }>;
+    classTypeDistribution: Array<{ name: string; count: number; percentage: number }>;
+    monthlyTrends: Array<{ month: string; totalMinutes: number; avgDuration: number }>;
+  }> {
+    // Weekly Activity for last 8 weeks
+    const weeklyActivity = [];
+    for (let i = 7; i >= 0; i--) {
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - (weekStart.getDay() + i * 7));
+      weekStart.setHours(0, 0, 0, 0);
+      
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+
+      const [routineCount] = await db
+        .select({
+          count: sql<number>`COUNT(${routines.id})::int`,
+        })
+        .from(routines)
+        .where(
+          and(
+            eq(routines.createdByUserId, userId),
+            sql`${routines.createdAt} >= ${weekStart}`,
+            sql`${routines.createdAt} < ${weekEnd}`
+          )
+        );
+
+      const [classCount] = await db
+        .select({
+          count: sql<number>`COUNT(${calendarEvents.id})::int`,
+        })
+        .from(calendarEvents)
+        .where(
+          and(
+            eq(calendarEvents.userId, userId),
+            sql`${calendarEvents.startDatetime} >= ${weekStart}`,
+            sql`${calendarEvents.startDatetime} < ${weekEnd}`
+          )
+        );
+
+      weeklyActivity.push({
+        week: weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        routines: routineCount?.count || 0,
+        classes: classCount?.count || 0,
+      });
+    }
+
+    // Popular Exercises (most used in routines)
+    const popularExercises = await db
+      .select({
+        name: exercises.name,
+        count: sql<number>`COUNT(${routineExercises.id})::int`,
+        category: exercises.category,
+      })
+      .from(routineExercises)
+      .innerJoin(exercises, eq(routineExercises.exerciseId, exercises.id))
+      .innerJoin(routines, eq(routineExercises.routineId, routines.id))
+      .where(eq(routines.createdByUserId, userId))
+      .groupBy(exercises.id, exercises.name, exercises.category)
+      .orderBy(sql`COUNT(${routineExercises.id}) DESC`)
+      .limit(10);
+
+    // Class Type Distribution
+    const classTypeData = await db
+      .select({
+        name: sql<string>`COALESCE(${classTypes.name}, 'No Class Type')`,
+        count: sql<number>`COUNT(${routines.id})::int`,
+      })
+      .from(routines)
+      .leftJoin(classTypes, eq(routines.classTypeId, classTypes.id))
+      .where(eq(routines.createdByUserId, userId))
+      .groupBy(classTypes.id, classTypes.name);
+
+    const totalClassTypeRoutines = classTypeData.reduce((sum, item) => sum + item.count, 0);
+    const classTypeDistribution = classTypeData.map(item => ({
+      name: item.name || 'No Class Type',
+      count: item.count,
+      percentage: totalClassTypeRoutines > 0 ? Math.round((item.count / totalClassTypeRoutines) * 100) : 0,
+    }));
+
+    // Monthly Trends for last 6 months
+    const monthlyTrends = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthStart = new Date();
+      monthStart.setMonth(monthStart.getMonth() - i);
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      
+      const monthEnd = new Date(monthStart);
+      monthEnd.setMonth(monthEnd.getMonth() + 1);
+
+      const [monthlyData] = await db
+        .select({
+          totalMinutes: sql<number>`COALESCE(SUM(${routines.totalDuration}), 0)::int`,
+          avgDuration: sql<number>`COALESCE(AVG(${routines.totalDuration}), 0)::int`,
+        })
+        .from(routines)
+        .where(
+          and(
+            eq(routines.createdByUserId, userId),
+            sql`${routines.createdAt} >= ${monthStart}`,
+            sql`${routines.createdAt} < ${monthEnd}`
+          )
+        );
+
+      monthlyTrends.push({
+        month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
+        totalMinutes: Math.round((monthlyData?.totalMinutes || 0) / 60), // Convert to minutes
+        avgDuration: Math.round((monthlyData?.avgDuration || 0) / 60), // Convert to minutes
+      });
+    }
+
+    return {
+      weeklyActivity,
+      popularExercises: popularExercises.map(ex => ({
+        name: ex.name,
+        count: ex.count,
+        category: ex.category || 'General'
+      })),
+      classTypeDistribution,
+      monthlyTrends,
     };
   }
 }
