@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,8 +57,62 @@ export default function RoutineBuilder({
   const [isCreateExerciseDialogOpen, setIsCreateExerciseDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<RoutineExercise | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  // Local state for debounced input values
+  const [localValues, setLocalValues] = useState<Record<string, any>>({});
+  const [debounceTimeouts, setDebounceTimeouts] = useState<Record<string, NodeJS.Timeout>>({});
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Debounced update function
+  const debouncedUpdate = useCallback((exerciseId: string, field: string, value: any) => {
+    // Clear existing timeout for this field
+    if (debounceTimeouts[`${exerciseId}-${field}`]) {
+      clearTimeout(debounceTimeouts[`${exerciseId}-${field}`]);
+    }
+
+    // Set new timeout
+    const timeoutId = setTimeout(() => {
+      onUpdateExercise(exerciseId, { [field]: value });
+      // Clean up timeout reference
+      setDebounceTimeouts(prev => {
+        const newTimeouts = { ...prev };
+        delete newTimeouts[`${exerciseId}-${field}`];
+        return newTimeouts;
+      });
+    }, 500); // 500ms debounce
+
+    setDebounceTimeouts(prev => ({
+      ...prev,
+      [`${exerciseId}-${field}`]: timeoutId
+    }));
+  }, [onUpdateExercise, debounceTimeouts]);
+
+  // Handle local input changes
+  const handleLocalChange = useCallback((exerciseId: string, field: string, value: any) => {
+    // Update local state immediately for responsive UI
+    setLocalValues(prev => ({
+      ...prev,
+      [`${exerciseId}-${field}`]: value
+    }));
+    
+    // Trigger debounced API update
+    debouncedUpdate(exerciseId, field, value);
+  }, [debouncedUpdate]);
+
+  // Get current value (local or from props)
+  const getCurrentValue = useCallback((exerciseId: string, field: string, defaultValue: any) => {
+    const localKey = `${exerciseId}-${field}`;
+    return localValues[localKey] !== undefined ? localValues[localKey] : defaultValue;
+  }, [localValues]);
+
+  // Clean up timeouts on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimeouts).forEach(clearTimeout);
+    };
+  }, [debounceTimeouts]);
 
   const exerciseForm = useForm<ExerciseFormData>({
     resolver: zodResolver(exerciseFormSchema),
@@ -618,10 +672,8 @@ export default function RoutineBuilder({
                           <div className="flex items-center mt-1">
                             <Input
                               type="number"
-                              value={routineExercise.durationSeconds || ''}
-                              onChange={(e) => onUpdateExercise(routineExercise.id, { 
-                                durationSeconds: parseInt(e.target.value) || 0 
-                              })}
+                              value={getCurrentValue(routineExercise.id, 'durationSeconds', routineExercise.durationSeconds || '')}
+                              onChange={(e) => handleLocalChange(routineExercise.id, 'durationSeconds', parseInt(e.target.value) || 0)}
                               className="w-20 text-sm"
                               placeholder="60"
                               data-testid={`input-duration-${routineExercise.id}`}
@@ -634,10 +686,8 @@ export default function RoutineBuilder({
                           <Label className="text-sm font-medium text-gray-700">Repetitions</Label>
                           <Input
                             type="number"
-                            value={routineExercise.repetitions || ''}
-                            onChange={(e) => onUpdateExercise(routineExercise.id, { 
-                              repetitions: parseInt(e.target.value) || 0 
-                            })}
+                            value={getCurrentValue(routineExercise.id, 'repetitions', routineExercise.repetitions || '')}
+                            onChange={(e) => handleLocalChange(routineExercise.id, 'repetitions', parseInt(e.target.value) || 0)}
                             className="w-20 text-sm mt-1"
                             placeholder="15"
                             data-testid={`input-reps-${routineExercise.id}`}
@@ -648,10 +698,8 @@ export default function RoutineBuilder({
                           <Label className="text-sm font-medium text-gray-700">Sets</Label>
                           <Input
                             type="number"
-                            value={routineExercise.sets || ''}
-                            onChange={(e) => onUpdateExercise(routineExercise.id, { 
-                              sets: parseInt(e.target.value) || 0 
-                            })}
+                            value={getCurrentValue(routineExercise.id, 'sets', routineExercise.sets || '')}
+                            onChange={(e) => handleLocalChange(routineExercise.id, 'sets', parseInt(e.target.value) || 0)}
                             className="w-20 text-sm mt-1"
                             placeholder="3"
                             data-testid={`input-sets-${routineExercise.id}`}
@@ -663,10 +711,8 @@ export default function RoutineBuilder({
                           <div className="flex items-center mt-1">
                             <Input
                               type="number"
-                              value={routineExercise.restSeconds || ''}
-                              onChange={(e) => onUpdateExercise(routineExercise.id, { 
-                                restSeconds: parseInt(e.target.value) || 0 
-                              })}
+                              value={getCurrentValue(routineExercise.id, 'restSeconds', routineExercise.restSeconds || '')}
+                              onChange={(e) => handleLocalChange(routineExercise.id, 'restSeconds', parseInt(e.target.value) || 0)}
                               className="w-20 text-sm"
                               placeholder="30"
                               data-testid={`input-rest-${routineExercise.id}`}
@@ -683,10 +729,8 @@ export default function RoutineBuilder({
                           <div>
                             <Input
                               type="text"
-                              value={routineExercise.musicTitle || ''}
-                              onChange={(e) => onUpdateExercise(routineExercise.id, { 
-                                musicTitle: e.target.value 
-                              })}
+                              value={getCurrentValue(routineExercise.id, 'musicTitle', routineExercise.musicTitle || '')}
+                              onChange={(e) => handleLocalChange(routineExercise.id, 'musicTitle', e.target.value)}
                               className="w-full"
                               placeholder="Song Title - Artist Name"
                               data-testid={`input-music-${routineExercise.id}`}
@@ -698,10 +742,8 @@ export default function RoutineBuilder({
                           <div>
                             <Input
                               type="text"
-                              value={routineExercise.musicNotes || ''}
-                              onChange={(e) => onUpdateExercise(routineExercise.id, { 
-                                musicNotes: e.target.value 
-                              })}
+                              value={getCurrentValue(routineExercise.id, 'musicNotes', routineExercise.musicNotes || '')}
+                              onChange={(e) => handleLocalChange(routineExercise.id, 'musicNotes', e.target.value)}
                               className="w-full"
                               placeholder="Music notes (BPM, energy level, cues)"
                               data-testid={`input-music-notes-${routineExercise.id}`}
