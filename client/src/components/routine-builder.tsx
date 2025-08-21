@@ -51,6 +51,8 @@ export default function RoutineBuilder({
   classTypeId,
   onClassTypeChange,
 }: RoutineBuilderProps) {
+  // Debug logging
+  console.log("RoutineBuilder classTypes:", classTypes);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
@@ -362,11 +364,15 @@ export default function RoutineBuilder({
                                 </FormControl>
                                 <SelectContent>
                                   <SelectItem value="">No specific class</SelectItem>
-                                  {classTypes.map((classType) => (
-                                    <SelectItem key={classType.id} value={classType.id}>
-                                      {classType.name}
-                                    </SelectItem>
-                                  ))}
+                                  {classTypes && classTypes.length > 0 ? (
+                                    classTypes.map((classType) => (
+                                      <SelectItem key={classType.id} value={classType.id}>
+                                        {classType.name}
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="" disabled>No class types available</SelectItem>
+                                  )}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
