@@ -51,9 +51,9 @@ export default function RoutineBuilder({
   classTypeId,
   onClassTypeChange,
 }: RoutineBuilderProps) {
-  // Debug logging
-  console.log("RoutineBuilder classTypes:", classTypes);
-  console.log("RoutineBuilder classTypes length:", classTypes?.length);
+  // Debug logging - remove after testing
+  // console.log("RoutineBuilder classTypes:", classTypes);
+  // console.log("RoutineBuilder classTypes length:", classTypes?.length);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
@@ -130,14 +130,19 @@ export default function RoutineBuilder({
       caloriesPerMinute: 5,
       modifications: "",
       safetyNotes: "",
-      classTypeId: "",
+      classTypeId: "none",
     },
   });
 
   // Create exercise mutation
   const createExercise = useMutation({
     mutationFn: async (data: ExerciseFormData) => {
-      return await apiRequest("POST", "/api/exercises", data);
+      // Convert "none" to null for the API
+      const processedData = {
+        ...data,
+        classTypeId: data.classTypeId === "none" ? null : data.classTypeId
+      };
+      return await apiRequest("POST", "/api/exercises", processedData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
@@ -354,35 +359,31 @@ export default function RoutineBuilder({
                         <FormField
                           control={exerciseForm.control}
                           name="classTypeId"
-                          render={({ field }) => {
-                            console.log("Class Type field render - classTypes:", classTypes);
-                            console.log("Class Type field value:", field.value);
-                            return (
-                              <FormItem>
-                                <FormLabel>Class Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                                  <FormControl>
-                                    <SelectTrigger data-testid="select-new-exercise-class-type">
-                                      <SelectValue placeholder="Select class type" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="">No specific class</SelectItem>
-                                    {classTypes && classTypes.length > 0 ? (
-                                      classTypes.map((classType) => (
-                                        <SelectItem key={classType.id} value={classType.id}>
-                                          {classType.name}
-                                        </SelectItem>
-                                      ))
-                                    ) : (
-                                      <SelectItem value="" disabled>No class types available</SelectItem>
-                                    )}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            );
-                          }}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Class Type</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value || "none"}>
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-new-exercise-class-type">
+                                    <SelectValue placeholder="Select class type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="none">No specific class</SelectItem>
+                                  {classTypes && classTypes.length > 0 ? (
+                                    classTypes.map((classType) => (
+                                      <SelectItem key={classType.id} value={classType.id}>
+                                        {classType.name}
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="no-types" disabled>No class types available</SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
                       </div>
 
