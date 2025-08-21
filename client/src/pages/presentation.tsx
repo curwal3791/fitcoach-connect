@@ -29,6 +29,7 @@ export default function Presentation() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -59,6 +60,15 @@ export default function Presentation() {
     enabled: !!selectedRoutineId,
   });
 
+  // Reset state when routine changes
+  useEffect(() => {
+    if (selectedRoutineId) {
+      setCurrentExerciseIndex(0);
+      setIsPlaying(false);
+      setHasStarted(false);
+    }
+  }, [selectedRoutineId]);
+
   // Timer effect
   useEffect(() => {
     if (isPlaying && timeRemaining > 0) {
@@ -84,14 +94,17 @@ export default function Presentation() {
     };
   }, [isPlaying, timeRemaining]);
 
-  // Set initial time when exercise changes and auto-start
+  // Set initial time when exercise changes
   useEffect(() => {
     if (selectedRoutine?.exercises && selectedRoutine.exercises[currentExerciseIndex]) {
       const exercise = selectedRoutine.exercises[currentExerciseIndex];
       setTimeRemaining(exercise.durationSeconds || 60);
-      setIsPlaying(true); // Auto-start each exercise
+      // Only auto-start if we've started the presentation already
+      if (hasStarted && currentExerciseIndex > 0) {
+        setIsPlaying(true);
+      }
     }
-  }, [currentExerciseIndex, selectedRoutine]);
+  }, [currentExerciseIndex, selectedRoutine, hasStarted]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -136,7 +149,12 @@ export default function Presentation() {
   }, []);
 
   const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
+    if (!hasStarted) {
+      setHasStarted(true);
+      setIsPlaying(true);
+    } else {
+      setIsPlaying(!isPlaying);
+    }
   };
 
   const handleNextExercise = () => {
@@ -153,6 +171,7 @@ export default function Presentation() {
 
   const handleStop = () => {
     setIsPlaying(false);
+    setHasStarted(false);
     setCurrentExerciseIndex(0);
     if (selectedRoutine?.exercises) {
       setTimeRemaining(selectedRoutine.exercises[0]?.durationSeconds || 60);
@@ -322,7 +341,7 @@ export default function Presentation() {
                       <div className="flex items-center space-x-4">
                         <span className="flex items-center">
                           <span className="w-2 h-2 bg-blue-400 rounded-full mr-1"></span>
-                          {routine.exerciseCount || 0} exercises
+                          Exercises
                         </span>
                         <span className="flex items-center">
                           <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
@@ -330,7 +349,7 @@ export default function Presentation() {
                         </span>
                       </div>
                       <div className="text-xs bg-gray-100 px-2 py-1 rounded">
-                        {routine.classType?.name || "General"}
+                        General
                       </div>
                     </div>
                   </CardContent>
@@ -466,7 +485,7 @@ export default function Presentation() {
                 </div>
 
                 {/* Exercise Details */}
-                <div className="grid grid-cols-3 gap-8 max-w-md mx-auto">
+                <div className="flex justify-center gap-12 max-w-md mx-auto">
                   {currentExercise.repetitions && (
                     <div className="text-center">
                       <p className="text-3xl font-bold text-primary" data-testid="presentation-reps">
@@ -477,18 +496,10 @@ export default function Presentation() {
                   )}
                   {currentExercise.sets && (
                     <div className="text-center">
-                      <p className="text-3xl font-bold text-fitness-600" data-testid="presentation-sets">
+                      <p className="text-3xl font-bold text-primary" data-testid="presentation-sets">
                         {currentExercise.sets}
                       </p>
                       <p className="text-gray-400">Sets</p>
-                    </div>
-                  )}
-                  {currentExercise.restSeconds && (
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-yellow-400" data-testid="presentation-rest">
-                        {currentExercise.restSeconds}s
-                      </p>
-                      <p className="text-gray-400">Rest</p>
                     </div>
                   )}
                 </div>
@@ -498,7 +509,6 @@ export default function Presentation() {
                   <div className="mt-6 text-center">
                     <p className="text-lg text-gray-300" data-testid="presentation-music">
                       🎵 {currentExercise.musicTitle}
-                      {currentExercise.musicArtist && ` - ${currentExercise.musicArtist}`}
                     </p>
                   </div>
                 )}
@@ -529,7 +539,7 @@ export default function Presentation() {
               className="px-8"
               data-testid="button-play-pause"
             >
-              {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+              {!hasStarted ? <Play className="w-6 h-6" /> : (isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />)}
             </Button>
             <Button 
               onClick={handleNextExercise}
@@ -554,7 +564,7 @@ export default function Presentation() {
           {/* Auto-flow indicator */}
           <div className="text-center mt-4">
             <p className="text-sm text-gray-400">
-              Exercises advance automatically • Press spacebar to pause/resume
+              {!hasStarted ? "Press play to start workout" : "Exercises advance automatically • Press spacebar to pause/resume"}
             </p>
           </div>
         </div>
