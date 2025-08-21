@@ -1,12 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Plus } from "lucide-react";
+import { Edit, Plus, Trash2 } from "lucide-react";
 import type { Exercise } from "@shared/schema";
 
 interface ExerciseCardProps {
   exercise: Exercise;
   onEdit?: (exercise: Exercise) => void;
+  onDelete?: (exercise: Exercise) => void;
   onAddToRoutine?: (exercise: Exercise) => void;
 }
 
@@ -23,7 +24,7 @@ const categoryColors = {
   balance: "bg-purple-500/10 text-purple-700",
 };
 
-export default function ExerciseCard({ exercise, onEdit, onAddToRoutine }: ExerciseCardProps) {
+export default function ExerciseCard({ exercise, onEdit, onDelete, onAddToRoutine }: ExerciseCardProps) {
   const difficultyColor = difficultyColors[exercise.difficultyLevel] || "bg-gray-100 text-gray-700";
   const categoryColor = categoryColors[exercise.category] || "bg-gray-100 text-gray-700";
 
@@ -73,7 +74,7 @@ export default function ExerciseCard({ exercise, onEdit, onAddToRoutine }: Exerc
           {onEdit && (
             <Button 
               variant="outline" 
-              className="flex-1" 
+              size="sm"
               onClick={() => onEdit(exercise)}
               data-testid={`button-edit-exercise-${exercise.id}`}
             >
@@ -81,9 +82,21 @@ export default function ExerciseCard({ exercise, onEdit, onAddToRoutine }: Exerc
               Edit
             </Button>
           )}
+          {onDelete && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onDelete(exercise)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              data-testid={`button-delete-exercise-${exercise.id}`}
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete
+            </Button>
+          )}
           {onAddToRoutine && (
             <Button 
-              className="flex-1 bg-primary/10 text-primary hover:bg-primary/20" 
+              size="sm"
               onClick={() => onAddToRoutine(exercise)}
               data-testid={`button-add-exercise-${exercise.id}`}
             >
