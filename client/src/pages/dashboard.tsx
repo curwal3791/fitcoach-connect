@@ -1,14 +1,21 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatsCard from "@/components/stats-card";
 import { Plus, Play, Edit, ListCheck, CalendarDays, Clock, Users2, TrendingUp, BarChart3, PieChart } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, LineChart, Line, Area, AreaChart, Pie } from 'recharts';
+import { apiRequest } from "@/lib/queryClient";
 
 interface Routine {
   id: string;
@@ -36,6 +43,12 @@ interface AnalyticsData {
   monthlyTrends: Array<{ month: string; totalMinutes: number; avgDuration: number }>;
 }
 
+interface ClassType {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 interface TodayClass {
   id: string;
   title: string;
@@ -49,6 +62,13 @@ interface TodayClass {
 export default function Dashboard() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  
+  const [isNewRoutineOpen, setIsNewRoutineOpen] = useState(false);
+  const [routineName, setRoutineName] = useState("");
+  const [routineDescription, setRoutineDescription] = useState("");
+  const [selectedClassTypeId, setSelectedClassTypeId] = useState<string>("");
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -83,6 +103,51 @@ export default function Dashboard() {
   const { data: analyticsData, isLoading: analyticsLoading } = useQuery<AnalyticsData>({
     queryKey: ["/api/dashboard/analytics"],
     enabled: isAuthenticated,
+  });
+
+  const { data: classTypes, isLoading: classTypesLoading } = useQuery<ClassType[]>({
+    queryKey: ["/api/class-types"],
+    enabled: isAuthenticated,
+  });
+
+  // Create routine mutation
+  const createRoutineMutation = useMutation({
+    mutationFn: async (routineData: { name: string; description?: string; classTypeId?: string }) => {
+      return await apiRequest("/api/routines", "POST", routineData);
+    },
+    onSuccess: (newRoutine) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/routines"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/analytics"] });
+      setIsNewRoutineOpen(false);
+      setRoutineName("");
+      setRoutineDescription("");
+      setSelectedClassTypeId("");
+      toast({
+        title: "Success",
+        description: "Routine created successfully!",
+      });
+      // Navigate to the routine builder
+      setLocation(`/routines`);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to create routine. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   // Get upcoming 5 events
@@ -139,6 +204,27 @@ export default function Dashboard() {
       'General': '#6b7280'
     };
     return categoryColors[category] || '#6b7280';
+  };
+
+  const handleCreateRoutine = () => {
+    if (!routineName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a routine name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createRoutineMutation.mutate({
+      name: routineName.trim(),
+      description: routineDescription.trim() || undefined,
+      classTypeId: selectedClassTypeId || undefined,
+    });
+  };
+
+  const handleRoutineClick = (routineId: string) => {
+    setLocation(`/routines`);
   };
 
   if (isLoading) {
@@ -428,10 +514,73 @@ export default function Dashboard() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl font-semibold text-gray-900">Recent Routines</CardTitle>
-              <Button className="bg-primary hover:bg-primary/90" data-testid="button-new-routine">
-                <Plus className="w-4 h-4 mr-2" />
-                New Routine
-              </Button>
+              <Dialog open={isNewRoutineOpen} onOpenChange={setIsNewRoutineOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-primary hover:bg-primary/90" data-testid="button-new-routine">
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Routine
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Create New Routine</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="routine-name">Routine Name</Label>
+                      <Input
+                        id="routine-name"
+                        placeholder="Enter routine name..."
+                        value={routineName}
+                        onChange={(e) => setRoutineName(e.target.value)}
+                        data-testid="input-routine-name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="routine-description">Description (Optional)</Label>
+                      <Textarea
+                        id="routine-description"
+                        placeholder="Describe your routine..."
+                        value={routineDescription}
+                        onChange={(e) => setRoutineDescription(e.target.value)}
+                        data-testid="input-routine-description"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="class-type">Class Type (Optional)</Label>
+                      <Select value={selectedClassTypeId} onValueChange={setSelectedClassTypeId}>
+                        <SelectTrigger data-testid="select-class-type">
+                          <SelectValue placeholder="Select a class type..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">No Class Type</SelectItem>
+                          {classTypes?.map((classType) => (
+                            <SelectItem key={classType.id} value={classType.id}>
+                              {classType.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsNewRoutineOpen(false)}
+                      data-testid="button-cancel-routine"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleCreateRoutine}
+                      disabled={createRoutineMutation.isPending}
+                      data-testid="button-create-routine"
+                    >
+                      {createRoutineMutation.isPending ? "Creating..." : "Create Routine"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardHeader>
           <CardContent>
@@ -450,6 +599,7 @@ export default function Dashboard() {
                       key={routine.id}
                       className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                       data-testid={`routine-item-${routine.id}`}
+                      onClick={() => handleRoutineClick(routine.id)}
                     >
                       <div className={`w-12 h-12 ${colors.bg} rounded-lg flex items-center justify-center mr-4`}>
                         <ListCheck className={`${colors.icon}`} />
@@ -468,11 +618,21 @@ export default function Dashboard() {
                           </span>
                         </p>
                       </div>
-                      <div className="flex items-center space-x-1 ml-2">
-                        <Button variant="ghost" size="sm" data-testid={`button-play-${routine.id}`}>
+                      <div className="flex items-center space-x-1 ml-2" onClick={(e) => e.stopPropagation()}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          data-testid={`button-play-${routine.id}`}
+                          onClick={() => setLocation('/presentation')}
+                        >
                           <Play className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" data-testid={`button-edit-${routine.id}`}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          data-testid={`button-edit-${routine.id}`}
+                          onClick={() => handleRoutineClick(routine.id)}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
                       </div>

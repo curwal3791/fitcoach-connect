@@ -21,7 +21,7 @@ function AuthenticatedApp() {
 
   // Handle URL-based navigation
   useEffect(() => {
-    if (location === "/routines") {
+    if (location.startsWith("/routines")) {
       setCurrentTab("routines");
     } else if (location === "/classes") {
       setCurrentTab("classes");
@@ -75,9 +75,9 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={AuthenticatedApp} />
-          <Route path="/dashboard" component={AuthenticatedApp} />
-          <Route path="/classes" component={AuthenticatedApp} />
+          <Route path="/routines/:id" component={AuthenticatedApp} />
           <Route path="/routines" component={AuthenticatedApp} />
+          <Route path="/classes" component={AuthenticatedApp} />
           <Route path="/exercises" component={AuthenticatedApp} />
           <Route path="/calendar" component={AuthenticatedApp} />
           <Route path="/presentation" component={AuthenticatedApp} />
