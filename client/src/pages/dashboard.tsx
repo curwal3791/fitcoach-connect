@@ -198,10 +198,62 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Analytics Charts */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-        {/* Weekly Activity Chart */}
+      {/* Top Section with Upcoming Schedule and Charts */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+        {/* Upcoming Schedule - Now prominently positioned */}
         <Card>
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
+              <CalendarDays className="w-5 h-5 mr-2 text-primary" />
+              Upcoming Schedule
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {eventsLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : upcomingEvents && upcomingEvents.length > 0 ? (
+              <div className="space-y-4">
+                {upcomingEvents.slice(0, 5).map((event, index) => {
+                  const borderColor = getBorderColorForIndex(index);
+                  return (
+                    <div 
+                      key={event.id} 
+                      className={`border-l-4 ${borderColor} pl-4`}
+                      data-testid={`event-item-${event.id}`}
+                    >
+                      <p className={`text-sm font-medium ${getBorderColorForIndex(index).replace('border-', 'text-')}`}>
+                        {new Date(event.startDatetime).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        })} - {formatTime(event.startDatetime)}
+                      </p>
+                      <h4 className="font-semibold text-gray-900" data-testid={`event-title-${event.id}`}>
+                        {event.title}
+                      </h4>
+                      {event.location && (
+                        <p className="text-sm text-gray-600" data-testid={`event-location-${event.id}`}>
+                          {event.location}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500" data-testid="text-no-events">
+                <CalendarDays className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>No upcoming classes scheduled.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Weekly Activity Chart */}
+        <Card className="xl:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
@@ -232,7 +284,10 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+      </div>
 
+      {/* Analytics Charts Row */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
         {/* Monthly Trends */}
         <Card>
           <CardHeader>
@@ -258,55 +313,6 @@ export default function Dashboard() {
               <div className="h-64 flex items-center justify-center text-gray-500">
                 <BarChart3 className="w-12 h-12 mb-4 text-gray-300" />
                 <p>No trend data yet</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Analytics and Lists */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-        {/* Popular Exercises */}
-        <Card className="xl:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
-              <BarChart3 className="w-5 h-5 mr-2 text-primary" />
-              Popular Exercises
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {analyticsLoading ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : analyticsData?.popularExercises && analyticsData.popularExercises.length > 0 ? (
-              <div className="space-y-3">
-                {analyticsData.popularExercises.slice(0, 8).map((exercise, index) => (
-                  <div key={exercise.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center">
-                      <div 
-                        className="w-3 h-3 rounded-full mr-3" 
-                        style={{ backgroundColor: getCategoryColor(exercise.category) }}
-                      />
-                      <div>
-                        <p className="font-medium text-gray-900" data-testid={`popular-exercise-${index}`}>
-                          {exercise.name}
-                        </p>
-                        <p className="text-sm text-gray-500">{exercise.category}</p>
-                      </div>
-                    </div>
-                    <span className="text-lg font-bold text-gray-700" data-testid={`exercise-count-${index}`}>
-                      {exercise.count}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>No exercise data yet</p>
               </div>
             )}
           </CardContent>
@@ -366,51 +372,50 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+      </div>
 
-        {/* Upcoming Schedule */}
+      {/* Popular Exercises - Full Width */}
+      <div className="mb-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl font-semibold text-gray-900">Upcoming Schedule</CardTitle>
+            <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
+              <BarChart3 className="w-5 h-5 mr-2 text-primary" />
+              Popular Exercises
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {eventsLoading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
+            {analyticsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {[...Array(6)].map((_, i) => (
                   <Skeleton key={i} className="h-16 w-full" />
                 ))}
               </div>
-            ) : upcomingEvents && upcomingEvents.length > 0 ? (
-              <div className="space-y-4">
-                {upcomingEvents.slice(0, 4).map((event, index) => {
-                  const borderColor = getBorderColorForIndex(index);
-                  return (
-                    <div 
-                      key={event.id} 
-                      className={`border-l-4 ${borderColor} pl-4`}
-                      data-testid={`event-item-${event.id}`}
-                    >
-                      <p className={`text-sm font-medium ${getBorderColorForIndex(index).replace('border-', 'text-')}`}>
-                        {new Date(event.startDatetime).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric'
-                        })} - {formatTime(event.startDatetime)}
-                      </p>
-                      <h4 className="font-semibold text-gray-900" data-testid={`event-title-${event.id}`}>
-                        {event.title}
-                      </h4>
-                      {event.location && (
-                        <p className="text-sm text-gray-600" data-testid={`event-location-${event.id}`}>
-                          {event.location}
+            ) : analyticsData?.popularExercises && analyticsData.popularExercises.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {analyticsData.popularExercises.slice(0, 9).map((exercise, index) => (
+                  <div key={exercise.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center min-w-0">
+                      <div 
+                        className="w-3 h-3 rounded-full mr-3 flex-shrink-0" 
+                        style={{ backgroundColor: getCategoryColor(exercise.category) }}
+                      />
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate" data-testid={`popular-exercise-${index}`}>
+                          {exercise.name}
                         </p>
-                      )}
+                        <p className="text-sm text-gray-500">{exercise.category}</p>
+                      </div>
                     </div>
-                  );
-                })}
+                    <span className="text-lg font-bold text-gray-700 ml-4" data-testid={`exercise-count-${index}`}>
+                      {exercise.count}
+                    </span>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500" data-testid="text-no-events">
-                <CalendarDays className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>No upcoming classes scheduled.</p>
+              <div className="text-center py-8 text-gray-500">
+                <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>No exercise data yet</p>
               </div>
             )}
           </CardContent>
