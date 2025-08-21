@@ -65,6 +65,7 @@ export const exercises = pgTable("exercises", {
   safetyNotes: text("safety_notes"),
   imageUrl: varchar("image_url"),
   videoUrl: varchar("video_url"),
+  classTypeId: varchar("class_type_id").references(() => classTypes.id),
   createdByUserId: varchar("created_by_user_id").references(() => users.id),
   isPublic: boolean("is_public").default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -136,6 +137,7 @@ export const classTypesRelations = relations(classTypes, ({ one, many }) => ({
     fields: [classTypes.createdByUserId],
     references: [users.id],
   }),
+  exercises: many(exercises),
   routines: many(routines),
   calendarEvents: many(calendarEvents),
 }));
@@ -144,6 +146,10 @@ export const exercisesRelations = relations(exercises, ({ one, many }) => ({
   createdBy: one(users, {
     fields: [exercises.createdByUserId],
     references: [users.id],
+  }),
+  classType: one(classTypes, {
+    fields: [exercises.classTypeId],
+    references: [classTypes.id],
   }),
   routineExercises: many(routineExercises),
 }));

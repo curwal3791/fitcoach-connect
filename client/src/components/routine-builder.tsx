@@ -127,6 +127,7 @@ export default function RoutineBuilder({
       caloriesPerMinute: 5,
       modifications: "",
       safetyNotes: "",
+      classTypeId: "",
     },
   });
 
@@ -297,7 +298,7 @@ export default function RoutineBuilder({
                         )}
                       />
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-3 gap-4">
                         <FormField
                           control={exerciseForm.control}
                           name="category"
@@ -315,6 +316,8 @@ export default function RoutineBuilder({
                                   <SelectItem value="cardio">Cardio</SelectItem>
                                   <SelectItem value="flexibility">Flexibility</SelectItem>
                                   <SelectItem value="balance">Balance</SelectItem>
+                                  <SelectItem value="sports">Sports</SelectItem>
+                                  <SelectItem value="rehabilitation">Rehabilitation</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -338,6 +341,32 @@ export default function RoutineBuilder({
                                   <SelectItem value="Beginner">Beginner</SelectItem>
                                   <SelectItem value="Intermediate">Intermediate</SelectItem>
                                   <SelectItem value="Advanced">Advanced</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={exerciseForm.control}
+                          name="classTypeId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Class Type</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-new-exercise-class-type">
+                                    <SelectValue placeholder="Select class type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="">No specific class</SelectItem>
+                                  {classTypes.map((classType) => (
+                                    <SelectItem key={classType.id} value={classType.id}>
+                                      {classType.name}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
