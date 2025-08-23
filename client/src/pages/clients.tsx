@@ -20,12 +20,15 @@ import { format } from "date-fns";
 
 // Attendance Tab Component
 function AttendanceTab({ clientId }: { clientId: string }) {
+  const queryClient = useQueryClient();
+  
   const { data: attendance = [], isLoading } = useQuery({
     queryKey: ["/api/attendance/client", clientId],
   });
 
-  const { data: upcomingEvents = [] } = useQuery({
-    queryKey: ["/api/calendar/events"],
+  // Get only events where this client is enrolled
+  const { data: enrolledEvents = [] } = useQuery({
+    queryKey: [`/api/calendar/events/client/${clientId}`],
   });
 
   const checkInMutation = useMutation({
@@ -47,17 +50,17 @@ function AttendanceTab({ clientId }: { clientId: string }) {
     return <div>Loading attendance...</div>;
   }
 
-  const upcomingForClient = upcomingEvents.filter((event: any) => 
-    new Date(event.startTime) > new Date()
+  const upcomingForClient = enrolledEvents.filter((event: any) => 
+    new Date(event.startDatetime) > new Date()
   ).slice(0, 5);
 
   return (
     <div className="space-y-6">
       {/* Quick Check-in Section */}
       <div>
-        <h4 className="font-medium mb-3">Upcoming Classes</h4>
+        <h4 className="font-medium mb-3">Enrolled Classes</h4>
         {upcomingForClient.length === 0 ? (
-          <p className="text-gray-500 text-sm">No upcoming classes scheduled</p>
+          <p className="text-gray-500 text-sm">Not enrolled in any upcoming classes</p>
         ) : (
           <div className="space-y-2">
             {upcomingForClient.map((event: any) => (
@@ -65,7 +68,7 @@ function AttendanceTab({ clientId }: { clientId: string }) {
                 <div>
                   <p className="font-medium">{event.title}</p>
                   <p className="text-sm text-gray-500">
-                    {format(new Date(event.startTime), "MMM d, yyyy 'at' h:mm a")}
+                    {format(new Date(event.startDatetime), "MMM d, yyyy 'at' h:mm a")}
                   </p>
                 </div>
                 <Button
