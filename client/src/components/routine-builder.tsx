@@ -185,7 +185,9 @@ export default function RoutineBuilder({
   const filteredExercises = exercises.filter(exercise => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !selectedCategory || exercise.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    // Filter by routine's class type if one is selected - show only exercises for that class
+    const matchesClassType = !classTypeId || exercise.classTypeId === classTypeId;
+    return matchesSearch && matchesCategory && matchesClassType;
   });
 
   const formatDuration = (seconds: number) => {
@@ -256,7 +258,14 @@ export default function RoutineBuilder({
         <Card className="h-fit">
           <CardHeader>
             <div className="flex items-center justify-between mb-4">
-              <CardTitle className="text-lg">Exercise Library</CardTitle>
+              <div>
+                <CardTitle className="text-lg">Exercise Library</CardTitle>
+                {classTypeId && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Showing exercises for: {classTypes.find(ct => ct.id === classTypeId)?.name || 'Selected class'}
+                  </p>
+                )}
+              </div>
               <Dialog open={isCreateExerciseDialogOpen} onOpenChange={setIsCreateExerciseDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="bg-primary hover:bg-primary/90" data-testid="button-add-new-exercise">
@@ -575,6 +584,22 @@ export default function RoutineBuilder({
                   </div>
                 </div>
               ))}
+              {filteredExercises.length === 0 && (
+                <div className="text-center py-8 text-gray-500" data-testid="no-exercises-message">
+                  <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  {classTypeId ? (
+                    <div>
+                      <p className="text-lg font-medium mb-2">No exercises found for this class type</p>
+                      <p className="text-sm mb-4">Try creating a new exercise for {classTypes.find(ct => ct.id === classTypeId)?.name || 'this class'}</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-lg font-medium mb-2">No exercises found</p>
+                      <p className="text-sm mb-4">Try adjusting your search or category filters</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
