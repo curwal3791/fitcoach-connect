@@ -74,7 +74,9 @@ Preferred communication style: Simple, everyday language.
 - ✅ **Calendar Integration Enhanced**: Quick scheduling with double-click dates, time slot buttons, class-routine linking
 - ✅ **Presentation Mode Enhanced**: Continuous auto-flow between exercises, simplified clean interface, professional full-screen mode, fixed button visibility issues
 - ✅ **Dashboard Analytics Enhanced**: Visual charts (weekly activity, monthly trends, popular exercises, class type distribution), improved layout with prominent schedule placement
-- 🔄 **Next**: Quick actions & navigation improvements
+- ✅ **Global Search Functionality**: Keyboard shortcuts (Cmd/Ctrl+K), unified search across routines and exercises, smart filtering
+- ✅ **Export & Sharing Features**: Professional PDF export with spreadsheet-style layout, shareable routine links, email sharing, clipboard copying
+- 🔄 **Next**: Advanced features and workflow optimizations
 
 ### Development Architecture
 - **Monorepo Structure**: Shared schema and types between client and server

@@ -94,92 +94,161 @@ export default function ExportRoutine({ routineId, routineName, className }: Exp
     try {
       const pdf = new jsPDF();
       const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 20;
       let yPosition = margin;
 
-      // Title
-      pdf.setFontSize(24);
+      // Header - Routine Name
+      pdf.setFontSize(20);
       pdf.setFont("helvetica", "bold");
       pdf.text(routine.name, margin, yPosition);
-      yPosition += 15;
+      yPosition += 12;
+
+      // Class Type
+      if (routine.classType) {
+        pdf.setFontSize(14);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(`Class Type: ${routine.classType.name}`, margin, yPosition);
+        yPosition += 10;
+      }
+
+      // Routine Summary
+      pdf.setFontSize(12);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Duration: ${formatDuration(routine.totalDuration)} | Exercises: ${routine.exerciseCount}`, margin, yPosition);
+      yPosition += 8;
 
       // Description
       if (routine.description) {
-        pdf.setFontSize(12);
-        pdf.setFont("helvetica", "normal");
         const splitDescription = pdf.splitTextToSize(routine.description, pageWidth - 2 * margin);
         pdf.text(splitDescription, margin, yPosition);
-        yPosition += splitDescription.length * 6 + 10;
+        yPosition += splitDescription.length * 5 + 8;
       }
 
-      // Routine Info
-      pdf.setFontSize(14);
-      pdf.setFont("helvetica", "bold");
-      pdf.text("Routine Details", margin, yPosition);
-      yPosition += 10;
+      yPosition += 5;
 
-      pdf.setFontSize(11);
+      // Table Header
+      const tableStartY = yPosition;
+      const colWidths = [15, 50, 25, 20, 20, 25, 35]; // Column widths
+      const rowHeight = 8;
+      
+      // Draw header background
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(margin, yPosition - 2, pageWidth - 2 * margin, rowHeight + 4, 'F');
+      
+      // Header text
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "bold");
+      let xPosition = margin + 2;
+      
+      const headers = ['#', 'Exercise Name', 'Duration', 'Sets', 'Reps', 'Difficulty', 'Equipment'];
+      headers.forEach((header, index) => {
+        pdf.text(header, xPosition, yPosition + 5);
+        xPosition += colWidths[index];
+      });
+      
+      yPosition += rowHeight + 4;
+
+      // Table rows
       pdf.setFont("helvetica", "normal");
-      pdf.text(`Duration: ${formatDuration(routine.totalDuration)}`, margin, yPosition);
-      yPosition += 6;
-      pdf.text(`Exercises: ${routine.exerciseCount}`, margin, yPosition);
-      yPosition += 6;
-      if (routine.classType) {
-        pdf.text(`Class Type: ${routine.classType.name}`, margin, yPosition);
-        yPosition += 6;
-      }
-      yPosition += 10;
-
-      // Exercises
-      pdf.setFontSize(14);
-      pdf.setFont("helvetica", "bold");
-      pdf.text("Exercises", margin, yPosition);
-      yPosition += 10;
-
+      pdf.setFontSize(9);
+      
       routine.exercises.forEach((exercise, index) => {
         // Check if we need a new page
-        if (yPosition > 250) {
+        if (yPosition + rowHeight > pageHeight - 30) {
+          pdf.addPage();
+          yPosition = margin;
+          
+          // Redraw header on new page
+          pdf.setFillColor(240, 240, 240);
+          pdf.rect(margin, yPosition - 2, pageWidth - 2 * margin, rowHeight + 4, 'F');
+          
+          pdf.setFont("helvetica", "bold");
+          xPosition = margin + 2;
+          headers.forEach((header, idx) => {
+            pdf.text(header, xPosition, yPosition + 5);
+            xPosition += colWidths[idx];
+          });
+          
+          yPosition += rowHeight + 4;
+          pdf.setFont("helvetica", "normal");
+        }
+
+        // Draw row border
+        pdf.setDrawColor(200, 200, 200);
+        pdf.rect(margin, yPosition - 2, pageWidth - 2 * margin, rowHeight + 4);
+        
+        // Row data
+        xPosition = margin + 2;
+        const rowData = [
+          (index + 1).toString(),
+          exercise.name.length > 25 ? exercise.name.substring(0, 22) + '...' : exercise.name,
+          exercise.duration ? `${exercise.duration}min` : '-',
+          exercise.sets ? exercise.sets.toString() : '-',
+          exercise.reps ? exercise.reps.toString() : '-',
+          exercise.difficulty || '-',
+          exercise.equipment && exercise.equipment.length > 15 ? 
+            exercise.equipment.substring(0, 12) + '...' : (exercise.equipment || '-')
+        ];
+        
+        rowData.forEach((data, idx) => {
+          pdf.text(data, xPosition, yPosition + 5);
+          xPosition += colWidths[idx];
+        });
+        
+        yPosition += rowHeight + 4;
+      });
+
+      // Add exercise descriptions section if any exist
+      const exercisesWithDescriptions = routine.exercises.filter(ex => ex.description);
+      if (exercisesWithDescriptions.length > 0) {
+        yPosition += 10;
+        
+        // Check if we need a new page for descriptions
+        if (yPosition > pageHeight - 60) {
           pdf.addPage();
           yPosition = margin;
         }
-
+        
         pdf.setFontSize(12);
         pdf.setFont("helvetica", "bold");
-        pdf.text(`${index + 1}. ${exercise.name}`, margin, yPosition);
-        yPosition += 8;
-
-        pdf.setFontSize(10);
+        pdf.text("Exercise Descriptions:", margin, yPosition);
+        yPosition += 10;
+        
+        pdf.setFontSize(9);
         pdf.setFont("helvetica", "normal");
         
-        if (exercise.description) {
-          const splitDesc = pdf.splitTextToSize(exercise.description, pageWidth - 2 * margin - 10);
-          pdf.text(splitDesc, margin + 10, yPosition);
-          yPosition += splitDesc.length * 5 + 3;
-        }
-
-        // Exercise details
-        const details = [];
-        if (exercise.duration) details.push(`Duration: ${exercise.duration}min`);
-        if (exercise.sets && exercise.reps) details.push(`Sets: ${exercise.sets} x ${exercise.reps}`);
-        details.push(`Category: ${exercise.category}`);
-        details.push(`Difficulty: ${exercise.difficulty}`);
-        if (exercise.equipment) details.push(`Equipment: ${exercise.equipment}`);
-
-        pdf.text(details.join(" | "), margin + 10, yPosition);
-        yPosition += 12;
-      });
+        exercisesWithDescriptions.forEach((exercise, index) => {
+          const exerciseIndex = routine.exercises.findIndex(ex => ex.id === exercise.id) + 1;
+          
+          if (yPosition > pageHeight - 30) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+          
+          pdf.setFont("helvetica", "bold");
+          pdf.text(`${exerciseIndex}. ${exercise.name}:`, margin, yPosition);
+          yPosition += 6;
+          
+          pdf.setFont("helvetica", "normal");
+          const splitDesc = pdf.splitTextToSize(exercise.description!, pageWidth - 2 * margin - 5);
+          pdf.text(splitDesc, margin + 5, yPosition);
+          yPosition += splitDesc.length * 4 + 8;
+        });
+      }
 
       // Footer
       const now = new Date();
       pdf.setFontSize(8);
       pdf.setFont("helvetica", "italic");
-      pdf.text(`Generated by FitFlow on ${now.toLocaleDateString()}`, margin, pdf.internal.pageSize.getHeight() - 10);
+      pdf.text(`Generated by FitFlow on ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`, 
+        margin, pdf.internal.pageSize.getHeight() - 10);
 
       pdf.save(`${routine.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
       
       toast({
         title: "PDF Generated",
-        description: "Routine exported successfully!",
+        description: "Routine exported successfully with organized layout!",
       });
     } catch (error) {
       console.error("PDF generation error:", error);
@@ -230,7 +299,7 @@ export default function ExportRoutine({ routineId, routineName, className }: Exp
                   PDF Export
                 </CardTitle>
                 <CardDescription>
-                  Generate a professional PDF with complete routine details and exercises
+                  Generate a professional PDF with organized spreadsheet-style layout
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
