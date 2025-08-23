@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatsCard from "@/components/stats-card";
-import { Plus, Play, Edit, ListCheck, CalendarDays, Clock, Users2, TrendingUp, BarChart3, PieChart } from "lucide-react";
+import { Plus, Play, Edit, ListCheck, CalendarDays, Clock, Users2, TrendingUp, BarChart3, PieChart, Zap, Search, Calendar, BookOpen, Target, Timer } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, LineChart, Line, Area, AreaChart, Pie } from 'recharts';
 import { apiRequest } from "@/lib/queryClient";
 
@@ -227,6 +227,80 @@ export default function Dashboard() {
     setLocation(`/routines`);
   };
 
+  const quickActions = [
+    {
+      title: "Quick Workout",
+      description: "Start a 15-min routine",
+      icon: Zap,
+      color: "bg-orange-500",
+      action: () => setLocation('/presentation')
+    },
+    {
+      title: "Find Exercise",
+      description: "Search exercise database",
+      icon: Search,
+      color: "bg-blue-500", 
+      action: () => setLocation('/exercises')
+    },
+    {
+      title: "Schedule Class",
+      description: "Add to calendar",
+      icon: Calendar,
+      color: "bg-green-500",
+      action: () => setLocation('/calendar')
+    },
+    {
+      title: "Browse Routines",
+      description: "View all workouts",
+      icon: BookOpen,
+      color: "bg-purple-500",
+      action: () => setLocation('/routines')
+    },
+    {
+      title: "Create Class Type",
+      description: "Add new class category",
+      icon: Target,
+      color: "bg-pink-500",
+      action: () => setLocation('/classes')
+    },
+    {
+      title: "Quick Timer",
+      description: "Start interval timer",
+      icon: Timer,
+      color: "bg-indigo-500",
+      action: () => {
+        // Show a timer notification with countdown
+        toast({
+          title: "30-Second Timer",
+          description: "Get ready for your next exercise!",
+        });
+        
+        // Start countdown
+        let countdown = 30;
+        const interval = setInterval(() => {
+          countdown--;
+          if (countdown === 15) {
+            toast({
+              title: "15 seconds left",
+              description: "Almost there!",
+            });
+          } else if (countdown === 5) {
+            toast({
+              title: "5 seconds left",
+              description: "Final countdown!",
+            });
+          } else if (countdown === 0) {
+            toast({
+              title: "Time's up!",
+              description: "Great work! Rest or move to next exercise.",
+            });
+            clearInterval(interval);
+          }
+        }, 1000);
+      }
+    }
+  ];
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -283,6 +357,38 @@ export default function Dashboard() {
           bgColor="bg-purple-500/10"
         />
       </div>
+
+      {/* Quick Actions */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
+            <Zap className="w-5 h-5 mr-2 text-orange-600" />
+            Quick Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {quickActions.map((action, index) => (
+              <button
+                key={index}
+                onClick={action.action}
+                className="flex flex-col items-center p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors group cursor-pointer border-2 border-transparent hover:border-gray-200"
+                data-testid={`quick-action-${action.title.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                <div className={`w-12 h-12 ${action.color} rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform`}>
+                  <action.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="font-semibold text-gray-900 text-sm mb-1 text-center">
+                  {action.title}
+                </h3>
+                <p className="text-xs text-gray-600 text-center">
+                  {action.description}
+                </p>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Top Section with Upcoming Schedule and Charts */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
