@@ -15,7 +15,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import RoutineBuilder from "@/components/routine-builder";
-import { Plus, Printer, Save, Filter } from "lucide-react";
+import ExportRoutine from "@/components/export-routine";
+import { Plus, Printer, Save, Filter, Share2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { 
@@ -359,6 +360,12 @@ export default function Routines() {
           <p className="text-gray-600 mt-1">Create and manage your workout routines</p>
         </div>
         <div className="flex space-x-3">
+          {selectedRoutineId && (
+            <ExportRoutine 
+              routineId={selectedRoutineId}
+              routineName={routineName}
+            />
+          )}
           <Button 
             variant="outline"
             onClick={() => window.print()}
@@ -535,9 +542,16 @@ export default function Routines() {
                   {routine.description && (
                     <p className="text-gray-600 text-sm mb-4">{routine.description}</p>
                   )}
-                  <div className="flex justify-between items-center text-sm text-gray-500">
+                  <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
                     <span>{routine.exerciseCount} exercises</span>
                     <span>{Math.round((routine.totalDuration || 0) / 60)} min</span>
+                  </div>
+                  <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+                    <ExportRoutine 
+                      routineId={routine.id}
+                      routineName={routine.name}
+                      className="text-xs py-1 px-2 h-7"
+                    />
                   </div>
                 </CardContent>
               </Card>
