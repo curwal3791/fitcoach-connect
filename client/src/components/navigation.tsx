@@ -23,6 +23,7 @@ const navigation = [
   { id: 'routines', name: 'Routines', icon: null },
   { id: 'exercises', name: 'Exercises', icon: null },
   { id: 'calendar', name: 'Calendar', icon: null },
+  { id: 'clients', name: 'Clients', icon: null },
   { id: 'presentation', name: 'Present', icon: null },
 ];
 

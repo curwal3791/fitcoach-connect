@@ -6,6 +6,10 @@ import {
   routineExercises,
   calendarEvents,
   userSavedRoutines,
+  clients,
+  clientNotes,
+  attendance,
+  progressMetrics,
   type User,
   type UpsertUser,
   type ClassType,
@@ -14,12 +18,20 @@ import {
   type RoutineExercise,
   type CalendarEvent,
   type UserSavedRoutine,
+  type Client,
+  type ClientNote,
+  type Attendance,
+  type ProgressMetric,
   type InsertClassType,
   type InsertExercise,
   type InsertRoutine,
   type InsertRoutineExercise,
   type InsertCalendarEvent,
   type InsertUserSavedRoutine,
+  type InsertClient,
+  type InsertClientNote,
+  type InsertAttendance,
+  type InsertProgressMetric,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, like, ilike, sql } from "drizzle-orm";
@@ -101,6 +113,29 @@ export interface IStorage {
     classTypeDistribution: Array<{ name: string; count: number; percentage: number }>;
     monthlyTrends: Array<{ month: string; totalMinutes: number; avgDuration: number }>;
   }>;
+
+  // Client Management operations
+  getClients(trainerId: string): Promise<Client[]>;
+  getClient(id: string): Promise<Client | undefined>;
+  createClient(client: InsertClient): Promise<Client>;
+  updateClient(id: string, client: Partial<InsertClient>): Promise<Client>;
+  deleteClient(id: string): Promise<void>;
+
+  // Client Notes operations
+  getClientNotes(clientId: string): Promise<ClientNote[]>;
+  createClientNote(note: InsertClientNote): Promise<ClientNote>;
+  deleteClientNote(id: string): Promise<void>;
+
+  // Attendance operations
+  getAttendanceForEvent(eventId: string): Promise<(Attendance & { client: Client })[]>;
+  getClientAttendance(clientId: string, limit?: number): Promise<(Attendance & { event: CalendarEvent })[]>;
+  createAttendance(attendance: InsertAttendance): Promise<Attendance>;
+  updateAttendance(id: string, attendance: Partial<InsertAttendance>): Promise<Attendance>;
+
+  // Progress Metrics operations
+  getClientProgress(clientId: string, exerciseId?: string): Promise<ProgressMetric[]>;
+  createProgressMetric(metric: InsertProgressMetric): Promise<ProgressMetric>;
+  getProgressMetricsForRoutine(clientId: string, routineId: string): Promise<ProgressMetric[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -936,6 +971,144 @@ export class DatabaseStorage implements IStorage {
       classTypeDistribution,
       monthlyTrends,
     };
+  }
+
+  // Client Management operations
+  async getClients(trainerId: string): Promise<Client[]> {
+    return await db
+      .select()
+      .from(clients)
+      .where(and(eq(clients.trainerId, trainerId), eq(clients.isActive, true)))
+      .orderBy(clients.firstName, clients.lastName);
+  }
+
+  async getClient(id: string): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client;
+  }
+
+  async createClient(client: InsertClient): Promise<Client> {
+    const [newClient] = await db.insert(clients).values(client).returning();
+    return newClient;
+  }
+
+  async updateClient(id: string, client: Partial<InsertClient>): Promise<Client> {
+    const [updated] = await db
+      .update(clients)
+      .set({
+        ...client,
+        updatedAt: new Date(),
+      })
+      .where(eq(clients.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteClient(id: string): Promise<void> {
+    // Soft delete by setting isActive to false
+    await db
+      .update(clients)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(clients.id, id));
+  }
+
+  // Client Notes operations
+  async getClientNotes(clientId: string): Promise<ClientNote[]> {
+    return await db
+      .select()
+      .from(clientNotes)
+      .where(eq(clientNotes.clientId, clientId))
+      .orderBy(desc(clientNotes.createdAt));
+  }
+
+  async createClientNote(note: InsertClientNote): Promise<ClientNote> {
+    const [newNote] = await db.insert(clientNotes).values(note).returning();
+    return newNote;
+  }
+
+  async deleteClientNote(id: string): Promise<void> {
+    await db.delete(clientNotes).where(eq(clientNotes.id, id));
+  }
+
+  // Attendance operations
+  async getAttendanceForEvent(eventId: string): Promise<(Attendance & { client: Client })[]> {
+    const results = await db
+      .select({
+        attendance: attendance,
+        client: clients,
+      })
+      .from(attendance)
+      .innerJoin(clients, eq(attendance.clientId, clients.id))
+      .where(eq(attendance.eventId, eventId))
+      .orderBy(clients.firstName, clients.lastName);
+
+    return results.map(result => ({
+      ...result.attendance,
+      client: result.client,
+    }));
+  }
+
+  async getClientAttendance(clientId: string, limit?: number): Promise<(Attendance & { event: CalendarEvent })[]> {
+    let query = db
+      .select({
+        attendance: attendance,
+        event: calendarEvents,
+      })
+      .from(attendance)
+      .innerJoin(calendarEvents, eq(attendance.eventId, calendarEvents.id))
+      .where(eq(attendance.clientId, clientId))
+      .orderBy(desc(calendarEvents.startDatetime));
+
+    if (limit) {
+      query = query.limit(limit) as any;
+    }
+
+    const results = await query;
+    return results.map(result => ({
+      ...result.attendance,
+      event: result.event,
+    }));
+  }
+
+  async createAttendance(attendanceData: InsertAttendance): Promise<Attendance> {
+    const [newAttendance] = await db.insert(attendance).values(attendanceData).returning();
+    return newAttendance;
+  }
+
+  async updateAttendance(id: string, attendanceData: Partial<InsertAttendance>): Promise<Attendance> {
+    const [updated] = await db
+      .update(attendance)
+      .set(attendanceData)
+      .where(eq(attendance.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Progress Metrics operations
+  async getClientProgress(clientId: string, exerciseId?: string): Promise<ProgressMetric[]> {
+    let query = db
+      .select()
+      .from(progressMetrics)
+      .where(eq(progressMetrics.clientId, clientId));
+
+    if (exerciseId) {
+      query = query.where(and(eq(progressMetrics.clientId, clientId), eq(progressMetrics.exerciseId, exerciseId))) as any;
+    }
+
+    return await query.orderBy(desc(progressMetrics.recordedAt));
+  }
+
+  async createProgressMetric(metric: InsertProgressMetric): Promise<ProgressMetric> {
+    const [newMetric] = await db.insert(progressMetrics).values(metric).returning();
+    return newMetric;
+  }
+
+  async getProgressMetricsForRoutine(clientId: string, routineId: string): Promise<ProgressMetric[]> {
+    return await db
+      .select()
+      .from(progressMetrics)
+      .where(and(eq(progressMetrics.clientId, clientId), eq(progressMetrics.routineId, routineId)))
+      .orderBy(desc(progressMetrics.recordedAt));
   }
 }
 

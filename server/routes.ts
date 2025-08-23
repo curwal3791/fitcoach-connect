@@ -9,6 +9,10 @@ import {
   insertRoutineSchema,
   insertRoutineExerciseSchema,
   insertCalendarEventSchema,
+  insertClientSchema,
+  insertClientNoteSchema,
+  insertAttendanceSchema,
+  insertProgressMetricSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -443,6 +447,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching saved routines:", error);
       res.status(500).json({ message: "Failed to fetch saved routines" });
+    }
+  });
+
+  // Client Management routes
+  app.get('/api/clients', isAuthenticated, async (req: any, res) => {
+    try {
+      const trainerId = req.user.claims.sub;
+      const clients = await storage.getClients(trainerId);
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      res.status(500).json({ message: "Failed to fetch clients" });
+    }
+  });
+
+  app.get('/api/clients/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const client = await storage.getClient(req.params.id);
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      res.json(client);
+    } catch (error) {
+      console.error("Error fetching client:", error);
+      res.status(500).json({ message: "Failed to fetch client" });
+    }
+  });
+
+  app.post('/api/clients', isAuthenticated, async (req: any, res) => {
+    try {
+      const trainerId = req.user.claims.sub;
+      const clientData = insertClientSchema.parse({
+        ...req.body,
+        trainerId,
+      });
+      const client = await storage.createClient(clientData);
+      res.status(201).json(client);
+    } catch (error) {
+      console.error("Error creating client:", error);
+      res.status(400).json({ message: "Failed to create client", error: error.message });
+    }
+  });
+
+  app.patch('/api/clients/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const updateData = insertClientSchema.partial().parse(req.body);
+      const client = await storage.updateClient(req.params.id, updateData);
+      res.json(client);
+    } catch (error) {
+      console.error("Error updating client:", error);
+      res.status(400).json({ message: "Failed to update client", error: error.message });
+    }
+  });
+
+  app.delete('/api/clients/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteClient(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      res.status(500).json({ message: "Failed to delete client" });
+    }
+  });
+
+  // Client Notes routes
+  app.get('/api/clients/:clientId/notes', isAuthenticated, async (req: any, res) => {
+    try {
+      const notes = await storage.getClientNotes(req.params.clientId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching client notes:", error);
+      res.status(500).json({ message: "Failed to fetch client notes" });
+    }
+  });
+
+  app.post('/api/clients/:clientId/notes', isAuthenticated, async (req: any, res) => {
+    try {
+      const trainerId = req.user.claims.sub;
+      const noteData = insertClientNoteSchema.parse({
+        ...req.body,
+        clientId: req.params.clientId,
+        trainerId,
+      });
+      const note = await storage.createClientNote(noteData);
+      res.status(201).json(note);
+    } catch (error) {
+      console.error("Error creating client note:", error);
+      res.status(400).json({ message: "Failed to create client note", error: error.message });
+    }
+  });
+
+  // Attendance routes
+  app.get('/api/events/:eventId/attendance', isAuthenticated, async (req: any, res) => {
+    try {
+      const attendance = await storage.getAttendanceForEvent(req.params.eventId);
+      res.json(attendance);
+    } catch (error) {
+      console.error("Error fetching event attendance:", error);
+      res.status(500).json({ message: "Failed to fetch event attendance" });
+    }
+  });
+
+  app.get('/api/clients/:clientId/attendance', isAuthenticated, async (req: any, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const attendance = await storage.getClientAttendance(req.params.clientId, limit);
+      res.json(attendance);
+    } catch (error) {
+      console.error("Error fetching client attendance:", error);
+      res.status(500).json({ message: "Failed to fetch client attendance" });
+    }
+  });
+
+  app.post('/api/attendance', isAuthenticated, async (req: any, res) => {
+    try {
+      const attendanceData = insertAttendanceSchema.parse(req.body);
+      const attendance = await storage.createAttendance(attendanceData);
+      res.status(201).json(attendance);
+    } catch (error) {
+      console.error("Error creating attendance:", error);
+      res.status(400).json({ message: "Failed to create attendance", error: error.message });
+    }
+  });
+
+  app.patch('/api/attendance/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const updateData = insertAttendanceSchema.partial().parse(req.body);
+      const attendance = await storage.updateAttendance(req.params.id, updateData);
+      res.json(attendance);
+    } catch (error) {
+      console.error("Error updating attendance:", error);
+      res.status(400).json({ message: "Failed to update attendance", error: error.message });
+    }
+  });
+
+  // Progress Metrics routes
+  app.get('/api/clients/:clientId/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const exerciseId = req.query.exerciseId as string;
+      const progress = await storage.getClientProgress(req.params.clientId, exerciseId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching client progress:", error);
+      res.status(500).json({ message: "Failed to fetch client progress" });
+    }
+  });
+
+  app.post('/api/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const metricData = insertProgressMetricSchema.parse(req.body);
+      const metric = await storage.createProgressMetric(metricData);
+      res.status(201).json(metric);
+    } catch (error) {
+      console.error("Error creating progress metric:", error);
+      res.status(400).json({ message: "Failed to create progress metric", error: error.message });
     }
   });
 

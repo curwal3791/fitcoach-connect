@@ -242,6 +242,137 @@ export const insertUserSavedRoutineSchema = createInsertSchema(userSavedRoutines
   savedAt: true,
 });
 
+// Client Management Tables
+export const clients = pgTable("clients", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  trainerId: varchar("trainer_id").notNull().references(() => users.id),
+  firstName: varchar("first_name").notNull(),
+  lastName: varchar("last_name").notNull(),
+  email: varchar("email"),
+  phone: varchar("phone"),
+  dateOfBirth: timestamp("date_of_birth"),
+  emergencyContact: varchar("emergency_contact"),
+  emergencyPhone: varchar("emergency_phone"),
+  goals: varchar("goals"),
+  medicalConditions: varchar("medical_conditions"),
+  injuries: varchar("injuries"),
+  fitnessLevel: varchar("fitness_level"), // Beginner, Intermediate, Advanced
+  preferredClassTypes: varchar("preferred_class_types").array(),
+  notes: varchar("notes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const clientNotes = pgTable("client_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  trainerId: varchar("trainer_id").notNull().references(() => users.id),
+  note: varchar("note").notNull(),
+  noteType: varchar("note_type").notNull(), // general, progress, injury, goal
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const attendance = pgTable("attendance", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  eventId: varchar("event_id").notNull().references(() => calendarEvents.id, { onDelete: "cascade" }),
+  status: varchar("status").notNull(), // checked_in, no_show, cancelled
+  checkedInAt: timestamp("checked_in_at"),
+  notes: varchar("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_attendance_client").on(table.clientId),
+  index("idx_attendance_event").on(table.eventId),
+]);
+
+export const progressMetrics = pgTable("progress_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  exerciseId: varchar("exercise_id").references(() => exercises.id),
+  routineId: varchar("routine_id").references(() => routines.id),
+  metricType: varchar("metric_type").notNull(), // weight, reps, time, distance, rpe, body_weight
+  value: varchar("value").notNull(), // Stored as string to handle different units
+  unit: varchar("unit"), // kg, lbs, seconds, minutes, meters, km, etc.
+  rpe: integer("rpe"), // Rate of Perceived Exertion (1-10)
+  notes: varchar("notes"),
+  recordedAt: timestamp("recorded_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_progress_client_date").on(table.clientId, table.recordedAt),
+  index("idx_progress_exercise").on(table.exerciseId),
+]);
+
+// Client Management Relations
+export const clientsRelations = relations(clients, ({ one, many }) => ({
+  trainer: one(users, {
+    fields: [clients.trainerId],
+    references: [users.id],
+  }),
+  notes: many(clientNotes),
+  attendance: many(attendance),
+  progressMetrics: many(progressMetrics),
+}));
+
+export const clientNotesRelations = relations(clientNotes, ({ one }) => ({
+  client: one(clients, {
+    fields: [clientNotes.clientId],
+    references: [clients.id],
+  }),
+  trainer: one(users, {
+    fields: [clientNotes.trainerId],
+    references: [users.id],
+  }),
+}));
+
+export const attendanceRelations = relations(attendance, ({ one }) => ({
+  client: one(clients, {
+    fields: [attendance.clientId],
+    references: [clients.id],
+  }),
+  event: one(calendarEvents, {
+    fields: [attendance.eventId],
+    references: [calendarEvents.id],
+  }),
+}));
+
+export const progressMetricsRelations = relations(progressMetrics, ({ one }) => ({
+  client: one(clients, {
+    fields: [progressMetrics.clientId],
+    references: [clients.id],
+  }),
+  exercise: one(exercises, {
+    fields: [progressMetrics.exerciseId],
+    references: [exercises.id],
+  }),
+  routine: one(routines, {
+    fields: [progressMetrics.routineId],
+    references: [routines.id],
+  }),
+}));
+
+// Client Management Insert Schemas
+export const insertClientSchema = createInsertSchema(clients).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertClientNoteSchema = createInsertSchema(clientNotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAttendanceSchema = createInsertSchema(attendance).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertProgressMetricSchema = createInsertSchema(progressMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -252,9 +383,19 @@ export type RoutineExercise = typeof routineExercises.$inferSelect;
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type UserSavedRoutine = typeof userSavedRoutines.$inferSelect;
 
+export type Client = typeof clients.$inferSelect;
+export type ClientNote = typeof clientNotes.$inferSelect;
+export type Attendance = typeof attendance.$inferSelect;
+export type ProgressMetric = typeof progressMetrics.$inferSelect;
+
 export type InsertClassType = z.infer<typeof insertClassTypeSchema>;
 export type InsertExercise = z.infer<typeof insertExerciseSchema>;
 export type InsertRoutine = z.infer<typeof insertRoutineSchema>;
 export type InsertRoutineExercise = z.infer<typeof insertRoutineExerciseSchema>;
 export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
 export type InsertUserSavedRoutine = z.infer<typeof insertUserSavedRoutineSchema>;
+
+export type InsertClient = z.infer<typeof insertClientSchema>;
+export type InsertClientNote = z.infer<typeof insertClientNoteSchema>;
+export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
+export type InsertProgressMetric = z.infer<typeof insertProgressMetricSchema>;

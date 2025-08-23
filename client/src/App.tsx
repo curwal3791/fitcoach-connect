@@ -12,6 +12,7 @@ import Classes from "@/pages/classes";
 import Routines from "@/pages/routines";
 import Exercises from "@/pages/exercises";
 import Calendar from "@/pages/calendar";
+import Clients from "@/pages/clients";
 import Presentation from "@/pages/presentation";
 import NotFound from "@/pages/not-found";
 
@@ -29,6 +30,8 @@ function AuthenticatedApp() {
       setCurrentTab("exercises");
     } else if (location === "/calendar") {
       setCurrentTab("calendar");
+    } else if (location === "/clients") {
+      setCurrentTab("clients");
     } else if (location === "/presentation") {
       setCurrentTab("presentation");
     } else {
@@ -48,6 +51,8 @@ function AuthenticatedApp() {
         return <Exercises />;
       case "calendar":
         return <Calendar />;
+      case "clients":
+        return <Clients />;
       case "presentation":
         return <Presentation />;
       default:
