@@ -291,3 +291,5 @@ export function CalendarEventForm({
     </Form>
   );
 }
+
+export default CalendarEventForm;

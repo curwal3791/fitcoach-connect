@@ -164,3 +164,5 @@ export function ClassEnrollment({ eventId, eventTitle }: ClassEnrollmentProps) {
     </div>
   );
 }
+
+export default ClassEnrollment;
