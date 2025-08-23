@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import heroImage from "@assets/generated_images/Fitness_instructor_leading_class_25704e11.png"
+import heroImage from "@assets/generated_images/Instructor_from_class_perspective_00d9e9fe.png"
 
 export function HeroSection() {
   return (
@@ -13,7 +13,7 @@ export function HeroSection() {
         <div className="absolute inset-0 bg-black/40" />
       </div>
 
-      <div className="relative z-10 container text-center text-white">
+      <div className="relative z-10 container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
         <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">Elevate Your Training Game</h1>
         <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto leading-relaxed">
           Create, save, and share workout routines effortlessly. Join thousands of fitness professionals building better
