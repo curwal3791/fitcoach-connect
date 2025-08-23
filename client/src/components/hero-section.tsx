@@ -23,7 +23,7 @@ export function HeroSection() {
           <Button 
             size="lg" 
             className="text-lg px-8 py-6"
-            onClick={() => window.location.href = '/api/login'}
+            onClick={() => window.location.href = '/register'}
           >
             Start Your Free Trial
           </Button>

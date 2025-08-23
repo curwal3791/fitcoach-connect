@@ -56,8 +56,10 @@ import { db } from "./db";
 import { eq, desc, and, like, ilike, sql } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations (mandatory for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: { email: string; passwordHash: string; firstName?: string; lastName?: string; emailVerified?: boolean }): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
 
   // Class Type operations
@@ -207,6 +209,25 @@ export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: { email: string; passwordHash: string; firstName?: string; lastName?: string; emailVerified?: boolean }): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        email: userData.email,
+        passwordHash: userData.passwordHash,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        emailVerified: userData.emailVerified,
+      })
+      .returning();
     return user;
   }
 

@@ -7,6 +7,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/navigation";
 import Landing from "@/pages/landing";
+import Login from "@/pages/login";
+import Register from "@/pages/register";
 import Dashboard from "@/pages/dashboard";
 import Classes from "@/pages/classes";
 import Routines from "@/pages/routines";
@@ -80,12 +82,29 @@ function AuthenticatedApp() {
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading FitFlow...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
+      {!isAuthenticated ? (
+        <>
+          <Route path="/register" component={Register} />
+          <Route path="/login" component={Login} />
+          <Route path="/landing" component={Landing} />
+          <Route path="/" component={Landing} />
+        </>
       ) : (
         <>
+          <Route path="/landing" component={Landing} />
           <Route path="/" component={AuthenticatedApp} />
           <Route path="/routines/:id" component={AuthenticatedApp} />
           <Route path="/routines" component={AuthenticatedApp} />
@@ -94,7 +113,6 @@ function Router() {
           <Route path="/programs" component={AuthenticatedApp} />
           <Route path="/calendar" component={AuthenticatedApp} />
           <Route path="/clients" component={AuthenticatedApp} />
-          <Route path="/landing" component={Landing} />
           <Route path="/presentation" component={AuthenticatedApp} />
           <Route path="/presentation/:routineId" component={AuthenticatedApp} />
           <Route path="/coach-console/:eventId" component={CoachConsole} />

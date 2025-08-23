@@ -30,13 +30,13 @@ export function Header() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => window.location.href = '/api/login'}
+            onClick={() => window.location.href = '/login'}
           >
             Log In
           </Button>
           <Button 
             size="sm"
-            onClick={() => window.location.href = '/api/login'}
+            onClick={() => window.location.href = '/register'}
           >
             Get Started
           </Button>
