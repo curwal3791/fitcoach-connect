@@ -15,6 +15,7 @@ import Calendar from "@/pages/calendar";
 import Clients from "@/pages/clients";
 import Presentation from "@/pages/presentation";
 import CoachConsole from "@/pages/coach-console";
+import CoachConsoleDemo from "@/pages/coach-console-demo";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -89,6 +90,7 @@ function Router() {
           <Route path="/clients" component={AuthenticatedApp} />
           <Route path="/presentation" component={AuthenticatedApp} />
           <Route path="/coach-console/:eventId" component={CoachConsole} />
+          <Route path="/demo/coach-console" component={CoachConsoleDemo} />
         </>
       )}
       <Route component={NotFound} />
