@@ -48,6 +48,7 @@ export default function Routines() {
   const [routineName, setRoutineName] = useState("New Routine");
   const [routineClassType, setRoutineClassType] = useState<string>("");
   const [filterClassType, setFilterClassType] = useState<string>("all");
+  const [openExportModal, setOpenExportModal] = useState(false);
 
   // Check for stored routine ID from navigation
   useEffect(() => {
@@ -366,14 +367,22 @@ export default function Routines() {
               routineName={routineName}
             />
           )}
-          <Button 
-            variant="outline"
-            onClick={() => window.print()}
-            data-testid="button-print-preview"
-          >
-            <Printer className="w-4 h-4 mr-2" />
-            Printer Preview
-          </Button>
+          {selectedRoutineId && (
+            <Button 
+              variant="outline"
+              onClick={() => {
+                // Trigger the export modal
+                const exportButton = document.querySelector('[data-testid="export-routine-trigger"]') as HTMLButtonElement;
+                if (exportButton) {
+                  exportButton.click();
+                }
+              }}
+              data-testid="button-print-preview"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Print/Export
+            </Button>
+          )}
           <Button 
             onClick={handleSaveRoutine}
             disabled={!selectedRoutineId}

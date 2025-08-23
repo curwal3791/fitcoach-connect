@@ -17,6 +17,7 @@ interface ExportRoutineProps {
   routineId: string;
   routineName: string;
   className?: string;
+  openOnMount?: boolean;
 }
 
 interface Exercise {
@@ -43,8 +44,8 @@ interface Routine {
   exercises: Exercise[];
 }
 
-export default function ExportRoutine({ routineId, routineName, className }: ExportRoutineProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function ExportRoutine({ routineId, routineName, className, openOnMount = false }: ExportRoutineProps) {
+  const [isOpen, setIsOpen] = useState(openOnMount);
   const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
