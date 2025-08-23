@@ -34,7 +34,7 @@ function AuthenticatedApp() {
       setCurrentTab("calendar");
     } else if (location === "/clients") {
       setCurrentTab("clients");
-    } else if (location === "/presentation") {
+    } else if (location.startsWith("/presentation")) {
       setCurrentTab("presentation");
     } else {
       setCurrentTab("dashboard");
@@ -89,6 +89,7 @@ function Router() {
           <Route path="/calendar" component={AuthenticatedApp} />
           <Route path="/clients" component={AuthenticatedApp} />
           <Route path="/presentation" component={AuthenticatedApp} />
+          <Route path="/presentation/:routineId" component={AuthenticatedApp} />
           <Route path="/coach-console/:eventId" component={CoachConsole} />
           <Route path="/demo/coach-console" component={CoachConsoleDemo} />
         </>

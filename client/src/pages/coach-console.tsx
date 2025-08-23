@@ -22,7 +22,8 @@ import {
   ArrowRight,
   ArrowLeft,
   RotateCcw,
-  Presentation
+  Presentation,
+  ChevronLeft
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -246,6 +247,19 @@ function CoachConsole() {
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8" data-testid="coach-console">
+      {/* Navigation */}
+      <div className="mb-6">
+        <Button 
+          variant="ghost" 
+          onClick={() => setLocation("/calendar")}
+          className="text-gray-600 hover:text-gray-900"
+          data-testid="button-back-to-calendar"
+        >
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Back to Calendar
+        </Button>
+      </div>
+
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>

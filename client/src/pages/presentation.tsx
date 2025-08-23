@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -23,6 +24,8 @@ import type { Routine, RoutineExercise, Exercise } from "@shared/schema";
 export default function Presentation() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
+  const { routineId } = useParams<{ routineId?: string }>();
+  const [location] = useLocation();
   
   const [selectedRoutineId, setSelectedRoutineId] = useState<string>("");
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -52,6 +55,13 @@ export default function Presentation() {
     queryKey: ["/api/routines"],
     enabled: isAuthenticated,
   });
+
+  // Auto-select routine from URL parameter
+  useEffect(() => {
+    if (routineId && routineId !== selectedRoutineId) {
+      setSelectedRoutineId(routineId);
+    }
+  }, [routineId, selectedRoutineId]);
 
   const { data: selectedRoutine, isLoading: routineLoading } = useQuery<Routine & { 
     exercises: (RoutineExercise & { exercise: Exercise })[] 
