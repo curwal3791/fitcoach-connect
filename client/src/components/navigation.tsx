@@ -74,6 +74,17 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
             <div className="hidden md:block">
               <GlobalSearch />
             </div>
+
+            {/* Back to Landing */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.open('/', '_blank')}
+              className="hidden md:flex"
+              data-testid="button-back-to-landing"
+            >
+              Back to Home
+            </Button>
             
             <Button 
               variant="ghost" 
@@ -94,6 +105,13 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuItem 
+                  onClick={() => window.open('/', '_blank')}
+                  className="cursor-pointer md:hidden"
+                  data-testid="menu-back-to-home"
+                >
+                  Back to Home
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <a href="/api/logout" className="w-full flex items-center" data-testid="link-logout">
                     <LogOut className="mr-2 h-4 w-4" />
