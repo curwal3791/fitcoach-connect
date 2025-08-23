@@ -338,7 +338,165 @@ export default function Dashboard() {
         <p className="text-gray-600 mt-1">Ready to create amazing workouts today?</p>
       </div>
 
-      {/* Quick Stats */}
+      {/* Top Priority: Upcoming Schedule with Quick Actions */}
+      <div className="grid gap-6 lg:grid-cols-4 mb-8">
+        {/* Upcoming Schedule - Takes up 3/4 width */}
+        <div className="lg:col-span-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
+                <CalendarDays className="w-5 h-5 mr-2 text-primary" />
+                Upcoming Schedule
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {eventsLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : upcomingEvents && upcomingEvents.length > 0 ? (
+                <div className="space-y-4">
+                  {upcomingEvents.slice(0, 5).map((event, index) => {
+                    const borderColor = getBorderColorForIndex(index);
+                    const colorClasses = getColorForIndex(index);
+                    
+                    return (
+                      <div
+                        key={event.id}
+                        className={`flex items-center justify-between p-4 rounded-lg border-2 ${borderColor} bg-white hover:shadow-md transition-all duration-200 cursor-pointer`}
+                        onClick={() => setLocation(`/coach-console/${event.id}`)}
+                        data-testid={`event-${event.id}`}
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-12 h-12 ${colorClasses.bg} rounded-lg flex items-center justify-center`}>
+                            <CalendarDays className={`w-6 h-6 ${colorClasses.icon}`} />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-lg text-gray-900">{event.title}</h3>
+                            <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                              <span className="flex items-center">
+                                <Calendar className="w-4 h-4 mr-1" />
+                                {new Date(event.startTime).toLocaleDateString()}
+                              </span>
+                              <span className="flex items-center">
+                                <Clock className="w-4 h-4 mr-1" />
+                                {new Date(event.startTime).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+                              </span>
+                              {event.duration && (
+                                <span className="flex items-center">
+                                  <Timer className="w-4 h-4 mr-1" />
+                                  {event.duration}min
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLocation(`/presentation/${event.routineId}`);
+                            }}
+                            data-testid={`present-${event.id}`}
+                          >
+                            <Play className="w-4 h-4 mr-1" />
+                            Present
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLocation(`/coach-console/${event.id}`);
+                            }}
+                            data-testid={`console-${event.id}`}
+                          >
+                            Console
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <CalendarDays className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium mb-2">No upcoming classes</p>
+                  <p className="text-sm mb-4">Schedule your first fitness class to get started</p>
+                  <Button onClick={() => setLocation("/calendar")} data-testid="button-schedule-first">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Schedule a Class
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions - Right side */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
+                <Zap className="w-5 h-5 mr-2 text-orange-600" />
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                onClick={() => setLocation("/calendar")}
+                className="w-full justify-start"
+                data-testid="button-quick-schedule"
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Schedule Class
+              </Button>
+              <Button
+                onClick={() => setLocation("/routines")}
+                variant="outline"
+                className="w-full justify-start"
+                data-testid="button-quick-routine"
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                Create Routine
+              </Button>
+              <Button
+                onClick={() => setLocation("/clients")}
+                variant="outline"
+                className="w-full justify-start"
+                data-testid="button-quick-clients"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Manage Clients
+              </Button>
+              <Button
+                onClick={() => setLocation("/exercises")}
+                variant="outline"
+                className="w-full justify-start"
+                data-testid="button-quick-exercises"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Add Exercise
+              </Button>
+              <Button
+                onClick={() => setLocation("/presentation")}
+                variant="outline"
+                className="w-full justify-start"
+                data-testid="button-quick-workout"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Quick Workout
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Stats Cards - Moved below schedule */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <StatsCard
           title="Total Routines"
@@ -369,38 +527,6 @@ export default function Dashboard() {
           bgColor="bg-purple-500/10"
         />
       </div>
-
-      {/* Quick Actions */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
-            <Zap className="w-5 h-5 mr-2 text-orange-600" />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {quickActions.map((action, index) => (
-              <button
-                key={index}
-                onClick={action.action}
-                className="flex flex-col items-center p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors group cursor-pointer border-2 border-transparent hover:border-gray-200"
-                data-testid={`quick-action-${action.title.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                <div className={`w-12 h-12 ${action.color} rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform`}>
-                  <action.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-semibold text-gray-900 text-sm mb-1 text-center">
-                  {action.title}
-                </h3>
-                <p className="text-xs text-gray-600 text-center">
-                  {action.description}
-                </p>
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Top Section with Upcoming Schedule and Charts */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
