@@ -663,7 +663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/events/:eventId/console", isAuthenticated, async (req, res) => {
     try {
       const { eventId } = req.params;
-      const userId = req.user?.claims?.sub;
+      const userId = req.user.id;
       
       // Get event details with routine and enrolled clients
       const eventData = await storage.getEventConsoleData(eventId, userId);
@@ -682,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/events/:eventId/start", isAuthenticated, async (req, res) => {
     try {
       const { eventId } = req.params;
-      const userId = req.user?.claims?.sub;
+      const userId = req.user.id;
       
       const updatedEvent = await storage.startEventSession(eventId, userId);
       res.json(updatedEvent);
@@ -696,7 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { eventId } = req.params;
       const { sessionNotes } = req.body;
-      const userId = req.user?.claims?.sub;
+      const userId = req.user.id;
       
       const sessionSummary = await storage.completeEventSession(eventId, userId, sessionNotes);
       res.json(sessionSummary);

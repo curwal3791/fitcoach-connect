@@ -104,8 +104,10 @@ export default function Routines() {
 
   const createRoutineMutation = useMutation({
     mutationFn: async (data: RoutineFormData) => {
-      const response = await apiRequest("POST", "/api/routines", data);
-      return response.json();
+      return await apiRequest("/api/routines", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
     },
     onSuccess: (newRoutine) => {
       queryClient.invalidateQueries({ queryKey: ["/api/routines"] });
@@ -158,8 +160,10 @@ export default function Routines() {
 
   const updateRoutineMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertRoutine> }) => {
-      const response = await apiRequest("PUT", `/api/routines/${id}`, data);
-      return response.json();
+      return await apiRequest(`/api/routines/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routines"] });
@@ -190,15 +194,17 @@ export default function Routines() {
 
   const addExerciseToRoutineMutation = useMutation({
     mutationFn: async ({ routineId, exerciseId, orderIndex }: { routineId: string; exerciseId: string; orderIndex: number }) => {
-      const response = await apiRequest("POST", `/api/routines/${routineId}/exercises`, {
-        exerciseId,
-        orderIndex,
-        durationSeconds: 60,
-        repetitions: 15,
-        sets: 1,
-        restSeconds: 30,
+      return await apiRequest(`/api/routines/${routineId}/exercises`, {
+        method: "POST",
+        body: JSON.stringify({
+          exerciseId,
+          orderIndex,
+          durationSeconds: 60,
+          repetitions: 15,
+          sets: 1,
+          restSeconds: 30,
+        }),
       });
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routines", selectedRoutineId] });
@@ -226,8 +232,10 @@ export default function Routines() {
 
   const updateRoutineExerciseMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<RoutineExercise> }) => {
-      const response = await apiRequest("PUT", `/api/routines/${selectedRoutineId}/exercises/${id}`, data);
-      return response.json();
+      return await apiRequest(`/api/routines/${selectedRoutineId}/exercises/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routines", selectedRoutineId] });
@@ -250,7 +258,9 @@ export default function Routines() {
 
   const removeExerciseFromRoutineMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/routines/${selectedRoutineId}/exercises/${id}`);
+      return await apiRequest(`/api/routines/${selectedRoutineId}/exercises/${id}`, {
+        method: "DELETE",
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routines", selectedRoutineId] });
