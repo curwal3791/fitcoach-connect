@@ -41,17 +41,17 @@ function Calendar() {
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
 
   // Fetch data
-  const { data: events, isLoading: eventsLoading } = useQuery({
+  const { data: events = [], isLoading: eventsLoading } = useQuery<CalendarEvent[]>({
     queryKey: ["/api/calendar/events"],
     retry: false,
   });
 
-  const { data: classTypes } = useQuery({
+  const { data: classTypes = [] } = useQuery<ClassType[]>({
     queryKey: ["/api/class-types"],
     retry: false,
   });
 
-  const { data: routines } = useQuery({
+  const { data: routines = [] } = useQuery<Routine[]>({
     queryKey: ["/api/routines"],
     retry: false,
   });
@@ -89,7 +89,9 @@ function Calendar() {
       });
     },
     onSuccess: () => {
+      // Force refetch of calendar events to ensure UI updates with new data
       queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
+      queryClient.refetchQueries({ queryKey: ["/api/calendar/events"] });
       setIsEditDialogOpen(false);
       setEditingEvent(null);
       toast({
@@ -150,7 +152,7 @@ function Calendar() {
     const eventData = {
       title,
       classTypeId: formData.classTypeId,
-      routineId: formData.routineId || null,
+      routineId: formData.routineId && formData.routineId !== "none" ? formData.routineId : null,
       startDatetime: startDate.toISOString(),
       endDatetime: endDate.toISOString(),
       location: formData.location || "",
