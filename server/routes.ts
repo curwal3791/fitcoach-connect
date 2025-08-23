@@ -605,6 +605,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Calendar Event Clients routes (enrollment)
+  app.get("/api/calendar/events/:eventId/clients", isAuthenticated, async (req, res) => {
+    try {
+      const clients = await storage.getEventClients(req.params.eventId);
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching event clients:", error);
+      res.status(500).json({ message: "Failed to fetch event clients" });
+    }
+  });
+
+  app.post("/api/calendar/events/:eventId/clients", isAuthenticated, async (req, res) => {
+    try {
+      const { clientId } = req.body;
+      await storage.enrollClientInEvent(req.params.eventId, clientId);
+      res.status(201).json({ message: "Client enrolled successfully" });
+    } catch (error) {
+      console.error("Error enrolling client:", error);
+      res.status(400).json({ message: "Failed to enroll client", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.delete("/api/calendar/events/:eventId/clients/:clientId", isAuthenticated, async (req, res) => {
+    try {
+      await storage.unenrollClientFromEvent(req.params.eventId, req.params.clientId);
+      res.json({ message: "Client unenrolled successfully" });
+    } catch (error) {
+      console.error("Error unenrolling client:", error);
+      res.status(400).json({ message: "Failed to unenroll client", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.get("/api/calendar/events/client/:clientId", isAuthenticated, async (req, res) => {
+    try {
+      const events = await storage.getClientEnrolledEvents(req.params.clientId);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching client enrolled events:", error);
+      res.status(500).json({ message: "Failed to fetch client enrolled events" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

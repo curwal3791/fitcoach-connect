@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Calendar as CalendarIcon, MapPin, Clock, Edit, Trash2 } from "lucide-react";
+import { ClassEnrollment } from "@/components/class-enrollment";
 import { 
   type CalendarEvent, 
   type ClassType,
@@ -463,6 +464,10 @@ export default function Calendar() {
                                 )}
                               </div>
                               <div className="flex space-x-1">
+                                <ClassEnrollment 
+                                  eventId={event.id} 
+                                  eventTitle={event.title}
+                                />
                                 <Button
                                   size="sm"
                                   variant="outline"

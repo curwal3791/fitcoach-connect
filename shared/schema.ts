@@ -303,6 +303,18 @@ export const progressMetrics = pgTable("progress_metrics", {
   index("idx_progress_exercise").on(table.exerciseId),
 ]);
 
+export const eventClients = pgTable("event_clients", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").notNull().references(() => calendarEvents.id, { onDelete: "cascade" }),
+  clientId: varchar("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  enrolledAt: timestamp("enrolled_at").defaultNow(),
+}, (table) => [
+  index("idx_event_clients_event").on(table.eventId),
+  index("idx_event_clients_client").on(table.clientId),
+  // Unique constraint to prevent duplicate enrollments
+  index("idx_event_client_unique").on(table.eventId, table.clientId),
+]);
+
 // Client Management Relations
 export const clientsRelations = relations(clients, ({ one, many }) => ({
   trainer: one(users, {
@@ -348,6 +360,17 @@ export const progressMetricsRelations = relations(progressMetrics, ({ one }) => 
   routine: one(routines, {
     fields: [progressMetrics.routineId],
     references: [routines.id],
+  }),
+}));
+
+export const eventClientsRelations = relations(eventClients, ({ one }) => ({
+  event: one(calendarEvents, {
+    fields: [eventClients.eventId],
+    references: [calendarEvents.id],
+  }),
+  client: one(clients, {
+    fields: [eventClients.clientId],
+    references: [clients.id],
   }),
 }));
 

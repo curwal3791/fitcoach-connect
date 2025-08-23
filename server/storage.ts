@@ -32,6 +32,7 @@ import {
   type InsertClientNote,
   type InsertAttendance,
   type InsertProgressMetric,
+  eventClients,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, like, ilike, sql } from "drizzle-orm";
@@ -1112,6 +1113,68 @@ export class DatabaseStorage implements IStorage {
       .from(progressMetrics)
       .where(and(eq(progressMetrics.clientId, clientId), eq(progressMetrics.routineId, routineId)))
       .orderBy(desc(progressMetrics.recordedAt));
+  }
+
+  // Event Client Enrollment operations
+  async getEventClients(eventId: string): Promise<Client[]> {
+    const result = await db
+      .select({
+        id: clients.id,
+        firstName: clients.firstName,
+        lastName: clients.lastName,
+        email: clients.email,
+        phone: clients.phone,
+        dateOfBirth: clients.dateOfBirth,
+        fitnessLevel: clients.fitnessLevel,
+        goals: clients.goals,
+        medicalConditions: clients.medicalConditions,
+        emergencyContact: clients.emergencyContact,
+        trainerId: clients.trainerId,
+        isActive: clients.isActive,
+        createdAt: clients.createdAt,
+        updatedAt: clients.updatedAt,
+      })
+      .from(clients)
+      .innerJoin(eventClients, eq(clients.id, eventClients.clientId))
+      .where(eq(eventClients.eventId, eventId));
+    
+    return result;
+  }
+
+  async enrollClientInEvent(eventId: string, clientId: string): Promise<void> {
+    await db
+      .insert(eventClients)
+      .values({ eventId, clientId })
+      .onConflictDoNothing();
+  }
+
+  async unenrollClientFromEvent(eventId: string, clientId: string): Promise<void> {
+    await db
+      .delete(eventClients)
+      .where(and(eq(eventClients.eventId, eventId), eq(eventClients.clientId, clientId)));
+  }
+
+  async getClientEnrolledEvents(clientId: string): Promise<CalendarEvent[]> {
+    const result = await db
+      .select({
+        id: calendarEvents.id,
+        title: calendarEvents.title,
+        startDatetime: calendarEvents.startDatetime,
+        endDatetime: calendarEvents.endDatetime,
+        location: calendarEvents.location,
+        notes: calendarEvents.notes,
+        classTypeId: calendarEvents.classTypeId,
+        routineId: calendarEvents.routineId,
+        userId: calendarEvents.userId,
+        createdAt: calendarEvents.createdAt,
+        updatedAt: calendarEvents.updatedAt,
+      })
+      .from(calendarEvents)
+      .innerJoin(eventClients, eq(calendarEvents.id, eventClients.eventId))
+      .where(eq(eventClients.clientId, clientId))
+      .orderBy(desc(calendarEvents.startDatetime));
+    
+    return result;
   }
 }
 
