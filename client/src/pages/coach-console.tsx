@@ -263,11 +263,25 @@ function CoachConsole() {
         
         {/* Session Controls */}
         <div className="flex space-x-2">
+          {/* Presentation Mode - Always available when routine exists */}
+          {routine?.id && (
+            <Button 
+              onClick={() => setLocation(`/presentation/${routine.id}`)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              data-testid="button-presentation-mode"
+            >
+              <Presentation className="w-4 h-4 mr-2" />
+              Presentation Mode
+            </Button>
+          )}
+          
+          {/* Session Management */}
           {!isSessionActive && !isSessionCompleted && (
             <Button 
               onClick={() => startSessionMutation.mutate()}
               disabled={startSessionMutation.isPending}
               className="bg-green-600 hover:bg-green-700"
+              data-testid="button-start-class"
             >
               <Play className="w-4 h-4 mr-2" />
               Start Class
@@ -275,24 +289,15 @@ function CoachConsole() {
           )}
           
           {isSessionActive && (
-            <>
-              <Button 
-                onClick={() => setLocation(`/presentation/${routine?.id}`)}
-                disabled={!routine?.id}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Presentation className="w-4 h-4 mr-2" />
-                Presentation Mode
-              </Button>
-              <Button 
-                onClick={handleCompleteSession}
-                disabled={completeSessionMutation.isPending}
-                variant="destructive"
-              >
-                <Square className="w-4 h-4 mr-2" />
-                Complete Class
-              </Button>
-            </>
+            <Button 
+              onClick={handleCompleteSession}
+              disabled={completeSessionMutation.isPending}
+              variant="destructive"
+              data-testid="button-complete-class"
+            >
+              <Square className="w-4 h-4 mr-2" />
+              Complete Class
+            </Button>
           )}
         </div>
       </div>
