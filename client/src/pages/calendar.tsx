@@ -130,10 +130,37 @@ function Calendar() {
 
   // Event handlers
   const handleFormSubmit = (formData: any) => {
+    // Process form data to create proper event data structure
+    const selectedClassType = classTypes?.find(ct => ct.id === formData.classTypeId);
+    const selectedRoutine = routines?.find(r => r.id === formData.routineId);
+    
+    // Create start datetime from form fields
+    const startDate = new Date(formData.eventDate);
+    startDate.setHours(parseInt(formData.startHour), parseInt(formData.startMinute), 0, 0);
+    
+    // Create end datetime based on duration
+    const endDate = new Date(startDate);
+    endDate.setMinutes(endDate.getMinutes() + parseInt(formData.duration));
+    
+    // Create title from class type and routine (if selected)
+    const title = selectedRoutine 
+      ? `${selectedClassType?.name || 'Class'}: ${selectedRoutine.name}`
+      : selectedClassType?.name || 'Fitness Class';
+    
+    const eventData = {
+      title,
+      classTypeId: formData.classTypeId,
+      routineId: formData.routineId || null,
+      startDatetime: startDate.toISOString(),
+      endDatetime: endDate.toISOString(),
+      location: formData.location || "",
+      notes: formData.notes || "",
+    };
+
     if (editingEvent) {
-      updateEventMutation.mutate({ ...formData, id: editingEvent.id });
+      updateEventMutation.mutate({ ...eventData, id: editingEvent.id });
     } else {
-      createEventMutation.mutate(formData);
+      createEventMutation.mutate(eventData);
     }
   };
 
