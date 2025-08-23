@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CalendarIcon, Clock, MapPin, Plus, Edit, Trash2 } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, Plus, Edit, Trash2, PlayCircle, Monitor } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { CalendarEvent, ClassType, Routine } from "@shared/schema";
 import CalendarEventForm from "@/components/calendar-event-form";
@@ -33,6 +34,7 @@ const formatTime = (dateString: string) => {
 function Calendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -376,6 +378,19 @@ function Calendar() {
                             />
                             <Button
                               size="sm"
+                              variant="default"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/coach-console/${event.id}`);
+                              }}
+                              data-testid={`button-coach-console-upcoming-${event.id}`}
+                              className="h-7 bg-green-600 hover:bg-green-700 text-white px-2"
+                              title="Start Class"
+                            >
+                              <PlayCircle className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
                               variant="outline"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -487,6 +502,17 @@ function Calendar() {
                                 eventId={event.id} 
                                 eventTitle={event.title}
                               />
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => navigate(`/coach-console/${event.id}`)}
+                                data-testid={`button-coach-console-event-${event.id}`}
+                                className="h-8 bg-green-600 hover:bg-green-700 text-white px-3"
+                                title="Start Class"
+                              >
+                                <Monitor className="w-3 h-3 mr-1" />
+                                Coach Console
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="outline"

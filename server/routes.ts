@@ -647,6 +647,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Coach Console Routes - Event-aware session management
+  app.get("/api/events/:eventId/console", isAuthenticated, async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const userId = req.user?.claims?.sub;
+      
+      // Get event details with routine and enrolled clients
+      const eventData = await storage.getEventConsoleData(eventId, userId);
+      
+      if (!eventData) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      res.json(eventData);
+    } catch (error) {
+      console.error("Error fetching event console data:", error);
+      res.status(500).json({ message: "Failed to fetch event data" });
+    }
+  });
+
+  app.post("/api/events/:eventId/start", isAuthenticated, async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const userId = req.user?.claims?.sub;
+      
+      const updatedEvent = await storage.startEventSession(eventId, userId);
+      res.json(updatedEvent);
+    } catch (error) {
+      console.error("Error starting event session:", error);
+      res.status(500).json({ message: "Failed to start session" });
+    }
+  });
+
+  app.post("/api/events/:eventId/complete", isAuthenticated, async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const { sessionNotes } = req.body;
+      const userId = req.user?.claims?.sub;
+      
+      const sessionSummary = await storage.completeEventSession(eventId, userId, sessionNotes);
+      res.json(sessionSummary);
+    } catch (error) {
+      console.error("Error completing event session:", error);
+      res.status(500).json({ message: "Failed to complete session" });
+    }
+  });
+
+  app.post("/api/events/:eventId/checkin", isAuthenticated, async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const { clientId, status } = req.body;
+      
+      await storage.recordAttendance(eventId, clientId, status || "present");
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error recording attendance:", error);
+      res.status(500).json({ message: "Failed to record attendance" });
+    }
+  });
+
+  app.post("/api/events/:eventId/metrics", isAuthenticated, async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const metricsData = req.body; // Array of metrics to record
+      
+      await storage.recordSessionMetrics(eventId, metricsData);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error recording metrics:", error);
+      res.status(500).json({ message: "Failed to record metrics" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

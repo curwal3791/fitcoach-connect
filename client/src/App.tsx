@@ -14,6 +14,7 @@ import Exercises from "@/pages/exercises";
 import Calendar from "@/pages/calendar";
 import Clients from "@/pages/clients";
 import Presentation from "@/pages/presentation";
+import CoachConsole from "@/pages/coach-console";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -87,6 +88,7 @@ function Router() {
           <Route path="/calendar" component={AuthenticatedApp} />
           <Route path="/clients" component={AuthenticatedApp} />
           <Route path="/presentation" component={AuthenticatedApp} />
+          <Route path="/coach-console/:eventId" component={CoachConsole} />
         </>
       )}
       <Route component={NotFound} />

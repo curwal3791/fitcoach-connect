@@ -112,6 +112,12 @@ export const calendarEvents = pgTable("calendar_events", {
   notes: text("notes"),
   isRecurring: boolean("is_recurring").default(false),
   recurrencePattern: text("recurrence_pattern"),
+  capacity: integer("capacity"),
+  allowWaitlist: boolean("allow_waitlist").default(false),
+  sessionStatus: varchar("session_status").default("scheduled"), // scheduled, in_progress, completed, cancelled
+  sessionStartedAt: timestamp("session_started_at"),
+  sessionCompletedAt: timestamp("session_completed_at"),
+  sessionNotes: text("session_notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -291,6 +297,8 @@ export const progressMetrics = pgTable("progress_metrics", {
   clientId: varchar("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
   exerciseId: varchar("exercise_id").references(() => exercises.id),
   routineId: varchar("routine_id").references(() => routines.id),
+  eventId: varchar("event_id").references(() => calendarEvents.id), // Links to specific class session
+  routineExerciseId: varchar("routine_exercise_id").references(() => routineExercises.id), // Links to specific exercise in routine
   metricType: varchar("metric_type").notNull(), // weight, reps, time, distance, rpe, body_weight
   value: varchar("value").notNull(), // Stored as string to handle different units
   unit: varchar("unit"), // kg, lbs, seconds, minutes, meters, km, etc.
@@ -301,6 +309,7 @@ export const progressMetrics = pgTable("progress_metrics", {
 }, (table) => [
   index("idx_progress_client_date").on(table.clientId, table.recordedAt),
   index("idx_progress_exercise").on(table.exerciseId),
+  index("idx_progress_event").on(table.eventId),
 ]);
 
 export const eventClients = pgTable("event_clients", {
@@ -360,6 +369,14 @@ export const progressMetricsRelations = relations(progressMetrics, ({ one }) => 
   routine: one(routines, {
     fields: [progressMetrics.routineId],
     references: [routines.id],
+  }),
+  event: one(calendarEvents, {
+    fields: [progressMetrics.eventId],
+    references: [calendarEvents.id],
+  }),
+  routineExercise: one(routineExercises, {
+    fields: [progressMetrics.routineExerciseId],
+    references: [routineExercises.id],
   }),
 }));
 

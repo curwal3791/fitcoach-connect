@@ -137,6 +137,13 @@ export interface IStorage {
   getClientProgress(clientId: string, exerciseId?: string): Promise<ProgressMetric[]>;
   createProgressMetric(metric: InsertProgressMetric): Promise<ProgressMetric>;
   getProgressMetricsForRoutine(clientId: string, routineId: string): Promise<ProgressMetric[]>;
+
+  // Coach Console operations
+  getEventConsoleData(eventId: string, userId: string): Promise<any>;
+  startEventSession(eventId: string, userId: string): Promise<CalendarEvent>;
+  completeEventSession(eventId: string, userId: string, sessionNotes?: string): Promise<any>;
+  recordAttendance(eventId: string, clientId: string, status: string): Promise<void>;
+  recordSessionMetrics(eventId: string, metrics: any[]): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1182,6 +1189,118 @@ export class DatabaseStorage implements IStorage {
     }
 
     return events.sort((a, b) => new Date(b.startDatetime).getTime() - new Date(a.startDatetime).getTime());
+  }
+
+  // Coach Console operations
+  async getEventConsoleData(eventId: string, userId: string): Promise<any> {
+    // Get event details
+    const [event] = await db
+      .select()
+      .from(calendarEvents)
+      .where(and(eq(calendarEvents.id, eventId), eq(calendarEvents.userId, userId)));
+
+    if (!event) return null;
+
+    // Get routine with exercises if attached
+    let routine = null;
+    if (event.routineId) {
+      routine = await this.getRoutineWithExercises(event.routineId);
+    }
+
+    // Get enrolled clients
+    const enrolledClients = await this.getEventClients(eventId);
+
+    // Get attendance records for this event
+    const attendanceRecords = await this.getAttendanceForEvent(eventId);
+
+    return {
+      event,
+      routine,
+      enrolledClients,
+      attendanceRecords,
+    };
+  }
+
+  async startEventSession(eventId: string, userId: string): Promise<CalendarEvent> {
+    const [updatedEvent] = await db
+      .update(calendarEvents)
+      .set({
+        sessionStatus: "in_progress",
+        sessionStartedAt: new Date(),
+      })
+      .where(and(eq(calendarEvents.id, eventId), eq(calendarEvents.userId, userId)))
+      .returning();
+
+    return updatedEvent;
+  }
+
+  async completeEventSession(eventId: string, userId: string, sessionNotes?: string): Promise<any> {
+    // Update event status
+    const [updatedEvent] = await db
+      .update(calendarEvents)
+      .set({
+        sessionStatus: "completed",
+        sessionCompletedAt: new Date(),
+        sessionNotes: sessionNotes || null,
+      })
+      .where(and(eq(calendarEvents.id, eventId), eq(calendarEvents.userId, userId)))
+      .returning();
+
+    // Generate session summary
+    const attendanceRecords = await this.getAttendanceForEvent(eventId);
+    const enrolledClients = await this.getEventClients(eventId);
+    
+    const summary = {
+      event: updatedEvent,
+      totalEnrolled: enrolledClients.length,
+      totalAttended: attendanceRecords.filter(r => r.status === "present").length,
+      attendanceRate: enrolledClients.length > 0 
+        ? Math.round((attendanceRecords.filter(r => r.status === "present").length / enrolledClients.length) * 100) 
+        : 0,
+      attendanceRecords,
+      sessionNotes: sessionNotes,
+    };
+
+    return summary;
+  }
+
+  async recordAttendance(eventId: string, clientId: string, status: string): Promise<void> {
+    // Check if attendance record already exists
+    const [existing] = await db
+      .select()
+      .from(attendance)
+      .where(and(eq(attendance.eventId, eventId), eq(attendance.clientId, clientId)));
+
+    if (existing) {
+      // Update existing record
+      await db
+        .update(attendance)
+        .set({ status, checkedInAt: new Date() })
+        .where(and(eq(attendance.eventId, eventId), eq(attendance.clientId, clientId)));
+    } else {
+      // Create new record
+      await db
+        .insert(attendance)
+        .values({
+          eventId,
+          clientId,
+          status,
+          checkedInAt: new Date(),
+        });
+    }
+  }
+
+  async recordSessionMetrics(eventId: string, metrics: any[]): Promise<void> {
+    // Insert multiple metrics in a batch
+    if (metrics.length > 0) {
+      await db.insert(progressMetrics).values(
+        metrics.map(metric => ({
+          ...metric,
+          eventId,
+          recordedAt: new Date(),
+        }))
+      );
+    }
   }
 }
 
