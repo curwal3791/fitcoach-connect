@@ -13,6 +13,12 @@ import {
   insertClientNoteSchema,
   insertAttendanceSchema,
   insertProgressMetricSchema,
+  insertProgramSchema,
+  insertProgramSessionSchema,
+  insertProgramEnrollmentSchema,
+  insertEventTargetSchema,
+  insertReadinessCheckSchema,
+  insertPerformanceRecordSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -717,6 +723,282 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error recording metrics:", error);
       res.status(500).json({ message: "Failed to record metrics" });
+    }
+  });
+
+  // Program Management Routes - Adaptive Program Builder
+  app.get('/api/programs', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const programs = await storage.getPrograms(userId);
+      res.json(programs);
+    } catch (error) {
+      console.error("Error fetching programs:", error);
+      res.status(500).json({ message: "Failed to fetch programs" });
+    }
+  });
+
+  app.get('/api/programs/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const program = await storage.getProgramWithSessions(req.params.id);
+      if (!program) {
+        return res.status(404).json({ message: "Program not found" });
+      }
+      res.json(program);
+    } catch (error) {
+      console.error("Error fetching program:", error);
+      res.status(500).json({ message: "Failed to fetch program" });
+    }
+  });
+
+  app.post('/api/programs', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const programData = insertProgramSchema.parse({
+        ...req.body,
+        createdBy: userId,
+      });
+      const program = await storage.createProgram(programData);
+      res.status(201).json(program);
+    } catch (error) {
+      console.error("Error creating program:", error);
+      res.status(400).json({ message: "Failed to create program", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.patch('/api/programs/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const updateData = insertProgramSchema.partial().parse(req.body);
+      const program = await storage.updateProgram(req.params.id, updateData);
+      res.json(program);
+    } catch (error) {
+      console.error("Error updating program:", error);
+      res.status(400).json({ message: "Failed to update program", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.delete('/api/programs/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteProgram(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting program:", error);
+      res.status(500).json({ message: "Failed to delete program" });
+    }
+  });
+
+  // Program Session Routes
+  app.get('/api/programs/:programId/sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const sessions = await storage.getProgramSessions(req.params.programId);
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching program sessions:", error);
+      res.status(500).json({ message: "Failed to fetch program sessions" });
+    }
+  });
+
+  app.post('/api/programs/:programId/sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const sessionData = insertProgramSessionSchema.parse({
+        ...req.body,
+        programId: req.params.programId,
+      });
+      const session = await storage.createProgramSession(sessionData);
+      res.status(201).json(session);
+    } catch (error) {
+      console.error("Error creating program session:", error);
+      res.status(400).json({ message: "Failed to create program session", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.patch('/api/program-sessions/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const updateData = insertProgramSessionSchema.partial().parse(req.body);
+      const session = await storage.updateProgramSession(req.params.id, updateData);
+      res.json(session);
+    } catch (error) {
+      console.error("Error updating program session:", error);
+      res.status(400).json({ message: "Failed to update program session", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.delete('/api/program-sessions/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteProgramSession(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting program session:", error);
+      res.status(500).json({ message: "Failed to delete program session" });
+    }
+  });
+
+  // Generate calendar events from program
+  app.post('/api/programs/:programId/generate-schedule', isAuthenticated, async (req: any, res) => {
+    try {
+      const { weeks } = req.body;
+      const events = await storage.generateScheduleForProgram(req.params.programId, weeks || 4);
+      res.json(events);
+    } catch (error) {
+      console.error("Error generating schedule:", error);
+      res.status(400).json({ message: "Failed to generate schedule", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Program Enrollment Routes
+  app.get('/api/programs/:programId/enrollments', isAuthenticated, async (req: any, res) => {
+    try {
+      const enrollments = await storage.getProgramEnrollments(req.params.programId);
+      res.json(enrollments);
+    } catch (error) {
+      console.error("Error fetching program enrollments:", error);
+      res.status(500).json({ message: "Failed to fetch program enrollments" });
+    }
+  });
+
+  app.post('/api/programs/:programId/enroll', isAuthenticated, async (req: any, res) => {
+    try {
+      const enrollmentData = insertProgramEnrollmentSchema.parse({
+        ...req.body,
+        programId: req.params.programId,
+        startDate: new Date(req.body.startDate),
+      });
+      const enrollment = await storage.enrollInProgram(enrollmentData);
+      res.status(201).json(enrollment);
+    } catch (error) {
+      console.error("Error enrolling in program:", error);
+      res.status(400).json({ message: "Failed to enroll in program", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.patch('/api/program-enrollments/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const updateData = insertProgramEnrollmentSchema.partial().parse(req.body);
+      const enrollment = await storage.updateProgramEnrollment(req.params.id, updateData);
+      res.json(enrollment);
+    } catch (error) {
+      console.error("Error updating program enrollment:", error);
+      res.status(400).json({ message: "Failed to update program enrollment", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.delete('/api/program-enrollments/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.unenrollFromProgram(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error unenrolling from program:", error);
+      res.status(500).json({ message: "Failed to unenroll from program" });
+    }
+  });
+
+  // Event Targets Routes (for auto-generated targets)
+  app.get('/api/events/:eventId/targets', isAuthenticated, async (req: any, res) => {
+    try {
+      const targets = await storage.getEventTargets(req.params.eventId);
+      res.json(targets);
+    } catch (error) {
+      console.error("Error fetching event targets:", error);
+      res.status(500).json({ message: "Failed to fetch event targets" });
+    }
+  });
+
+  app.post('/api/events/:eventId/targets', isAuthenticated, async (req: any, res) => {
+    try {
+      const targetsData = req.body.map((target: any) => ({
+        ...insertEventTargetSchema.parse(target),
+        eventId: req.params.eventId,
+      }));
+      const targets = await storage.createEventTargets(targetsData);
+      res.status(201).json(targets);
+    } catch (error) {
+      console.error("Error creating event targets:", error);
+      res.status(400).json({ message: "Failed to create event targets", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.patch('/api/event-targets/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const updateData = insertEventTargetSchema.partial().parse(req.body);
+      const target = await storage.updateEventTarget(req.params.id, updateData);
+      res.json(target);
+    } catch (error) {
+      console.error("Error updating event target:", error);
+      res.status(400).json({ message: "Failed to update event target", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Readiness Check Routes
+  app.get('/api/clients/:clientId/readiness', isAuthenticated, async (req: any, res) => {
+    try {
+      const date = req.query.date ? new Date(req.query.date as string) : undefined;
+      const readiness = await storage.getClientReadiness(req.params.clientId, date);
+      res.json(readiness);
+    } catch (error) {
+      console.error("Error fetching client readiness:", error);
+      res.status(500).json({ message: "Failed to fetch client readiness" });
+    }
+  });
+
+  app.post('/api/clients/:clientId/readiness', isAuthenticated, async (req: any, res) => {
+    try {
+      const readinessData = insertReadinessCheckSchema.parse({
+        ...req.body,
+        clientId: req.params.clientId,
+        date: new Date(req.body.date),
+      });
+      const readiness = await storage.createReadinessCheck(readinessData);
+      res.status(201).json(readiness);
+    } catch (error) {
+      console.error("Error creating readiness check:", error);
+      res.status(400).json({ message: "Failed to create readiness check", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.get('/api/clients/:clientId/readiness/latest', isAuthenticated, async (req: any, res) => {
+    try {
+      const readiness = await storage.getLatestReadiness(req.params.clientId);
+      res.json(readiness);
+    } catch (error) {
+      console.error("Error fetching latest readiness:", error);
+      res.status(500).json({ message: "Failed to fetch latest readiness" });
+    }
+  });
+
+  // Performance Record Routes
+  app.get('/api/events/:eventId/performance', isAuthenticated, async (req: any, res) => {
+    try {
+      const clientId = req.query.clientId as string;
+      const performance = await storage.getPerformanceRecords(req.params.eventId, clientId);
+      res.json(performance);
+    } catch (error) {
+      console.error("Error fetching performance records:", error);
+      res.status(500).json({ message: "Failed to fetch performance records" });
+    }
+  });
+
+  app.post('/api/events/:eventId/performance', isAuthenticated, async (req: any, res) => {
+    try {
+      const performanceData = insertPerformanceRecordSchema.parse({
+        ...req.body,
+        eventId: req.params.eventId,
+      });
+      const performance = await storage.createPerformanceRecord(performanceData);
+      res.status(201).json(performance);
+    } catch (error) {
+      console.error("Error creating performance record:", error);
+      res.status(400).json({ message: "Failed to create performance record", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Apply Progression to Event
+  app.post('/api/events/:eventId/apply-progression', isAuthenticated, async (req: any, res) => {
+    try {
+      const result = await storage.applyProgression(req.params.eventId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error applying progression:", error);
+      res.status(500).json({ message: "Failed to apply progression", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 

@@ -439,3 +439,201 @@ export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertClientNote = z.infer<typeof insertClientNoteSchema>;
 export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
 export type InsertProgressMetric = z.infer<typeof insertProgressMetricSchema>;
+
+// Program Management Tables - Adaptive Program Builder
+export const programs = pgTable("programs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: varchar("description"),
+  goal: varchar("goal"), // "strength", "endurance", "weight_loss", "flexibility"
+  durationWeeks: integer("duration_weeks").notNull(),
+  classTypeId: varchar("class_type_id").references(() => classTypes.id),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const programSessions = pgTable("program_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => programs.id, { onDelete: "cascade" }),
+  weekNumber: integer("week_number").notNull(),
+  dayOfWeek: integer("day_of_week").notNull(), // 0-6 (Sunday-Saturday)
+  routineId: varchar("routine_id").references(() => routines.id),
+  sessionName: varchar("session_name"),
+  baseParams: jsonb("base_params"), // {reps: 10, time: 60, weight: 50}
+  progressionRule: jsonb("progression_rule"), // {type: "linear", param: "reps", increment: 1, floor: 8, ceiling: 15, deloadEvery: 4, deloadPct: 0.1}
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const programEnrollments = pgTable("program_enrollments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => programs.id, { onDelete: "cascade" }),
+  clientId: varchar("client_id").references(() => clients.id),
+  classTypeId: varchar("class_type_id").references(() => classTypes.id), // For group enrollments
+  startDate: timestamp("start_date").notNull(),
+  currentWeek: integer("current_week").default(1),
+  isActive: boolean("is_active").default(true),
+  enrolledAt: timestamp("enrolled_at").defaultNow(),
+});
+
+export const eventTargets = pgTable("event_targets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").notNull().references(() => calendarEvents.id, { onDelete: "cascade" }),
+  routineExerciseId: varchar("routine_exercise_id").references(() => routineExercises.id),
+  targets: jsonb("targets"), // {reps: 12, time: 45, weight: 60, rpe: 7}
+  isGenerated: boolean("is_generated").default(false), // true if auto-generated from program
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const readinessChecks = pgTable("readiness_checks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull().references(() => clients.id),
+  eventId: varchar("event_id").references(() => calendarEvents.id),
+  date: timestamp("date").notNull(),
+  sleep: integer("sleep").notNull(), // 1-5 scale
+  soreness: integer("soreness").notNull(), // 1-5 scale
+  stress: integer("stress").notNull(), // 1-5 scale
+  readinessScore: integer("readiness_score"), // calculated score 1-5
+  notes: varchar("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const performanceRecords = pgTable("performance_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").notNull().references(() => calendarEvents.id),
+  clientId: varchar("client_id").notNull().references(() => clients.id),
+  exerciseId: varchar("exercise_id").notNull().references(() => exercises.id),
+  routineExerciseId: varchar("routine_exercise_id").references(() => routineExercises.id),
+  actual: jsonb("actual"), // {reps: 10, time: 55, weight: 65, rpe: 8}
+  notes: varchar("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Relations for program management tables
+export const programsRelations = relations(programs, ({ many, one }) => ({
+  sessions: many(programSessions),
+  enrollments: many(programEnrollments),
+  classType: one(classTypes, {
+    fields: [programs.classTypeId],
+    references: [classTypes.id],
+  }),
+  createdByUser: one(users, {
+    fields: [programs.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const programSessionsRelations = relations(programSessions, ({ one }) => ({
+  program: one(programs, {
+    fields: [programSessions.programId],
+    references: [programs.id],
+  }),
+  routine: one(routines, {
+    fields: [programSessions.routineId],
+    references: [routines.id],
+  }),
+}));
+
+export const programEnrollmentsRelations = relations(programEnrollments, ({ one }) => ({
+  program: one(programs, {
+    fields: [programEnrollments.programId],
+    references: [programs.id],
+  }),
+  client: one(clients, {
+    fields: [programEnrollments.clientId],
+    references: [clients.id],
+  }),
+  classType: one(classTypes, {
+    fields: [programEnrollments.classTypeId],
+    references: [classTypes.id],
+  }),
+}));
+
+export const eventTargetsRelations = relations(eventTargets, ({ one }) => ({
+  event: one(calendarEvents, {
+    fields: [eventTargets.eventId],
+    references: [calendarEvents.id],
+  }),
+  routineExercise: one(routineExercises, {
+    fields: [eventTargets.routineExerciseId],
+    references: [routineExercises.id],
+  }),
+}));
+
+export const readinessChecksRelations = relations(readinessChecks, ({ one }) => ({
+  client: one(clients, {
+    fields: [readinessChecks.clientId],
+    references: [clients.id],
+  }),
+  event: one(calendarEvents, {
+    fields: [readinessChecks.eventId],
+    references: [calendarEvents.id],
+  }),
+}));
+
+export const performanceRecordsRelations = relations(performanceRecords, ({ one }) => ({
+  event: one(calendarEvents, {
+    fields: [performanceRecords.eventId],
+    references: [calendarEvents.id],
+  }),
+  client: one(clients, {
+    fields: [performanceRecords.clientId],
+    references: [clients.id],
+  }),
+  exercise: one(exercises, {
+    fields: [performanceRecords.exerciseId],
+    references: [exercises.id],
+  }),
+  routineExercise: one(routineExercises, {
+    fields: [performanceRecords.routineExerciseId],
+    references: [routineExercises.id],
+  }),
+}));
+
+// Program Management Insert Schemas
+export const insertProgramSchema = createInsertSchema(programs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProgramSessionSchema = createInsertSchema(programSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertProgramEnrollmentSchema = createInsertSchema(programEnrollments).omit({
+  id: true,
+  enrolledAt: true,
+});
+
+export const insertEventTargetSchema = createInsertSchema(eventTargets).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReadinessCheckSchema = createInsertSchema(readinessChecks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPerformanceRecordSchema = createInsertSchema(performanceRecords).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Program Management Types
+export type Program = typeof programs.$inferSelect;
+export type ProgramSession = typeof programSessions.$inferSelect;
+export type ProgramEnrollment = typeof programEnrollments.$inferSelect;
+export type EventTarget = typeof eventTargets.$inferSelect;
+export type ReadinessCheck = typeof readinessChecks.$inferSelect;
+export type PerformanceRecord = typeof performanceRecords.$inferSelect;
+
+export type InsertProgram = z.infer<typeof insertProgramSchema>;
+export type InsertProgramSession = z.infer<typeof insertProgramSessionSchema>;
+export type InsertProgramEnrollment = z.infer<typeof insertProgramEnrollmentSchema>;
+export type InsertEventTarget = z.infer<typeof insertEventTargetSchema>;
+export type InsertReadinessCheck = z.infer<typeof insertReadinessCheckSchema>;
+export type InsertPerformanceRecord = z.infer<typeof insertPerformanceRecordSchema>;

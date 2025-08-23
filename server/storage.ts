@@ -10,6 +10,12 @@ import {
   clientNotes,
   attendance,
   progressMetrics,
+  programs,
+  programSessions,
+  programEnrollments,
+  eventTargets,
+  readinessChecks,
+  performanceRecords,
   type User,
   type UpsertUser,
   type ClassType,
@@ -22,6 +28,12 @@ import {
   type ClientNote,
   type Attendance,
   type ProgressMetric,
+  type Program,
+  type ProgramSession,
+  type ProgramEnrollment,
+  type EventTarget,
+  type ReadinessCheck,
+  type PerformanceRecord,
   type InsertClassType,
   type InsertExercise,
   type InsertRoutine,
@@ -32,6 +44,12 @@ import {
   type InsertClientNote,
   type InsertAttendance,
   type InsertProgressMetric,
+  type InsertProgram,
+  type InsertProgramSession,
+  type InsertProgramEnrollment,
+  type InsertEventTarget,
+  type InsertReadinessCheck,
+  type InsertPerformanceRecord,
   eventClients,
 } from "@shared/schema";
 import { db } from "./db";
@@ -144,6 +162,45 @@ export interface IStorage {
   completeEventSession(eventId: string, userId: string, sessionNotes?: string): Promise<any>;
   recordAttendance(eventId: string, clientId: string, status: string): Promise<void>;
   recordSessionMetrics(eventId: string, metrics: any[]): Promise<void>;
+
+  // Program Management operations
+  getPrograms(userId: string): Promise<(Program & { classType?: ClassType; enrollmentCount: number })[]>;
+  getProgram(id: string): Promise<Program | undefined>;
+  getProgramWithSessions(id: string): Promise<(Program & { 
+    classType?: ClassType; 
+    sessions: (ProgramSession & { routine?: Routine })[] 
+  }) | undefined>;
+  createProgram(program: InsertProgram): Promise<Program>;
+  updateProgram(id: string, program: Partial<InsertProgram>): Promise<Program>;
+  deleteProgram(id: string): Promise<void>;
+
+  // Program Session operations
+  getProgramSessions(programId: string): Promise<(ProgramSession & { routine?: Routine })[]>;
+  createProgramSession(session: InsertProgramSession): Promise<ProgramSession>;
+  updateProgramSession(id: string, session: Partial<InsertProgramSession>): Promise<ProgramSession>;
+  deleteProgramSession(id: string): Promise<void>;
+  generateScheduleForProgram(programId: string, weeks: number): Promise<CalendarEvent[]>;
+
+  // Program Enrollment operations
+  getProgramEnrollments(programId: string): Promise<(ProgramEnrollment & { client?: Client; classType?: ClassType })[]>;
+  enrollInProgram(enrollment: InsertProgramEnrollment): Promise<ProgramEnrollment>;
+  updateProgramEnrollment(id: string, enrollment: Partial<InsertProgramEnrollment>): Promise<ProgramEnrollment>;
+  unenrollFromProgram(id: string): Promise<void>;
+
+  // Event Targets operations
+  getEventTargets(eventId: string): Promise<(EventTarget & { routineExercise?: RoutineExercise & { exercise: Exercise } })[]>;
+  createEventTargets(targets: InsertEventTarget[]): Promise<EventTarget[]>;
+  updateEventTarget(id: string, target: Partial<InsertEventTarget>): Promise<EventTarget>;
+
+  // Readiness Check operations
+  getClientReadiness(clientId: string, date?: Date): Promise<ReadinessCheck[]>;
+  createReadinessCheck(check: InsertReadinessCheck): Promise<ReadinessCheck>;
+  getLatestReadiness(clientId: string): Promise<ReadinessCheck | undefined>;
+
+  // Performance Record operations
+  getPerformanceRecords(eventId: string, clientId?: string): Promise<(PerformanceRecord & { exercise: Exercise })[]>;
+  createPerformanceRecord(record: InsertPerformanceRecord): Promise<PerformanceRecord>;
+  applyProgression(eventId: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1301,6 +1358,326 @@ export class DatabaseStorage implements IStorage {
         }))
       );
     }
+  }
+
+  // Program Management operations
+  async getPrograms(userId: string): Promise<(Program & { classType?: ClassType; enrollmentCount: number })[]> {
+    const result = await db
+      .select({
+        program: programs,
+        classType: classTypes,
+        enrollmentCount: sql<number>`count(${programEnrollments.id})`.as('enrollmentCount'),
+      })
+      .from(programs)
+      .leftJoin(classTypes, eq(programs.classTypeId, classTypes.id))
+      .leftJoin(programEnrollments, eq(programs.id, programEnrollments.programId))
+      .where(eq(programs.createdBy, userId))
+      .groupBy(programs.id, classTypes.id);
+
+    return result.map(row => ({
+      ...row.program,
+      classType: row.classType,
+      enrollmentCount: row.enrollmentCount,
+    }));
+  }
+
+  async getProgram(id: string): Promise<Program | undefined> {
+    const [program] = await db.select().from(programs).where(eq(programs.id, id));
+    return program;
+  }
+
+  async getProgramWithSessions(id: string): Promise<(Program & { 
+    classType?: ClassType; 
+    sessions: (ProgramSession & { routine?: Routine })[] 
+  }) | undefined> {
+    const [program] = await db
+      .select()
+      .from(programs)
+      .leftJoin(classTypes, eq(programs.classTypeId, classTypes.id))
+      .where(eq(programs.id, id));
+
+    if (!program.programs) return undefined;
+
+    const sessions = await db
+      .select()
+      .from(programSessions)
+      .leftJoin(routines, eq(programSessions.routineId, routines.id))
+      .where(eq(programSessions.programId, id))
+      .orderBy(programSessions.weekNumber, programSessions.dayOfWeek);
+
+    return {
+      ...program.programs,
+      classType: program.class_types,
+      sessions: sessions.map(session => ({
+        ...session.program_sessions,
+        routine: session.routines,
+      })),
+    };
+  }
+
+  async createProgram(program: InsertProgram): Promise<Program> {
+    const [created] = await db.insert(programs).values(program).returning();
+    return created;
+  }
+
+  async updateProgram(id: string, program: Partial<InsertProgram>): Promise<Program> {
+    const [updated] = await db
+      .update(programs)
+      .set({ ...program, updatedAt: new Date() })
+      .where(eq(programs.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteProgram(id: string): Promise<void> {
+    await db.delete(programs).where(eq(programs.id, id));
+  }
+
+  // Program Session operations
+  async getProgramSessions(programId: string): Promise<(ProgramSession & { routine?: Routine })[]> {
+    const sessions = await db
+      .select()
+      .from(programSessions)
+      .leftJoin(routines, eq(programSessions.routineId, routines.id))
+      .where(eq(programSessions.programId, programId))
+      .orderBy(programSessions.weekNumber, programSessions.dayOfWeek);
+
+    return sessions.map(session => ({
+      ...session.program_sessions,
+      routine: session.routines,
+    }));
+  }
+
+  async createProgramSession(session: InsertProgramSession): Promise<ProgramSession> {
+    const [created] = await db.insert(programSessions).values(session).returning();
+    return created;
+  }
+
+  async updateProgramSession(id: string, session: Partial<InsertProgramSession>): Promise<ProgramSession> {
+    const [updated] = await db
+      .update(programSessions)
+      .set(session)
+      .where(eq(programSessions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteProgramSession(id: string): Promise<void> {
+    await db.delete(programSessions).where(eq(programSessions.id, id));
+  }
+
+  async generateScheduleForProgram(programId: string, weeks: number): Promise<CalendarEvent[]> {
+    const program = await this.getProgram(programId);
+    if (!program) throw new Error("Program not found");
+
+    const sessions = await this.getProgramSessions(programId);
+    const events: CalendarEvent[] = [];
+    const startDate = new Date();
+
+    for (let week = 1; week <= weeks; week++) {
+      for (const session of sessions.filter(s => s.weekNumber === week)) {
+        const eventDate = new Date(startDate);
+        eventDate.setDate(startDate.getDate() + ((week - 1) * 7) + session.dayOfWeek);
+        
+        const event = await db.insert(calendarEvents).values({
+          title: `${program.name} - ${session.sessionName || 'Session'}`,
+          description: `Week ${week} - Auto-generated from program`,
+          startDatetime: eventDate,
+          endDatetime: new Date(eventDate.getTime() + 60 * 60 * 1000), // 1 hour default
+          userId: program.createdBy,
+          classTypeId: program.classTypeId,
+          routineId: session.routineId,
+          location: "Studio",
+          sessionStatus: "scheduled",
+        }).returning();
+
+        // Generate event targets if routine exists
+        if (session.routineId && session.baseParams) {
+          const routineExercises = await this.getRoutineExercises(session.routineId);
+          const targets = routineExercises.map(re => ({
+            eventId: event[0].id,
+            routineExerciseId: re.id,
+            targets: session.baseParams,
+            isGenerated: true,
+          }));
+          await this.createEventTargets(targets);
+        }
+
+        events.push(event[0]);
+      }
+    }
+
+    return events;
+  }
+
+  // Program Enrollment operations
+  async getProgramEnrollments(programId: string): Promise<(ProgramEnrollment & { client?: Client; classType?: ClassType })[]> {
+    const enrollments = await db
+      .select()
+      .from(programEnrollments)
+      .leftJoin(clients, eq(programEnrollments.clientId, clients.id))
+      .leftJoin(classTypes, eq(programEnrollments.classTypeId, classTypes.id))
+      .where(eq(programEnrollments.programId, programId));
+
+    return enrollments.map(enrollment => ({
+      ...enrollment.program_enrollments,
+      client: enrollment.clients,
+      classType: enrollment.class_types,
+    }));
+  }
+
+  async enrollInProgram(enrollment: InsertProgramEnrollment): Promise<ProgramEnrollment> {
+    const [created] = await db.insert(programEnrollments).values(enrollment).returning();
+    return created;
+  }
+
+  async updateProgramEnrollment(id: string, enrollment: Partial<InsertProgramEnrollment>): Promise<ProgramEnrollment> {
+    const [updated] = await db
+      .update(programEnrollments)
+      .set(enrollment)
+      .where(eq(programEnrollments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async unenrollFromProgram(id: string): Promise<void> {
+    await db.delete(programEnrollments).where(eq(programEnrollments.id, id));
+  }
+
+  // Event Targets operations
+  async getEventTargets(eventId: string): Promise<(EventTarget & { routineExercise?: RoutineExercise & { exercise: Exercise } })[]> {
+    const targets = await db
+      .select()
+      .from(eventTargets)
+      .leftJoin(routineExercises, eq(eventTargets.routineExerciseId, routineExercises.id))
+      .leftJoin(exercises, eq(routineExercises.exerciseId, exercises.id))
+      .where(eq(eventTargets.eventId, eventId));
+
+    return targets.map(target => ({
+      ...target.event_targets,
+      routineExercise: target.routine_exercises ? {
+        ...target.routine_exercises,
+        exercise: target.exercises!,
+      } : undefined,
+    }));
+  }
+
+  async createEventTargets(targets: InsertEventTarget[]): Promise<EventTarget[]> {
+    const created = await db.insert(eventTargets).values(targets).returning();
+    return created;
+  }
+
+  async updateEventTarget(id: string, target: Partial<InsertEventTarget>): Promise<EventTarget> {
+    const [updated] = await db
+      .update(eventTargets)
+      .set(target)
+      .where(eq(eventTargets.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Readiness Check operations
+  async getClientReadiness(clientId: string, date?: Date): Promise<ReadinessCheck[]> {
+    let query = db.select().from(readinessChecks).where(eq(readinessChecks.clientId, clientId));
+    
+    if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      query = query.where(and(
+        eq(readinessChecks.clientId, clientId),
+        sql`${readinessChecks.date} >= ${startOfDay}`,
+        sql`${readinessChecks.date} <= ${endOfDay}`
+      ));
+    }
+
+    return await query.orderBy(desc(readinessChecks.date));
+  }
+
+  async createReadinessCheck(check: InsertReadinessCheck): Promise<ReadinessCheck> {
+    // Calculate readiness score (simple average of sleep, soreness inverted, stress inverted)
+    const readinessScore = Math.round((check.sleep + (6 - check.soreness) + (6 - check.stress)) / 3);
+    
+    const [created] = await db.insert(readinessChecks).values({
+      ...check,
+      readinessScore,
+    }).returning();
+    return created;
+  }
+
+  async getLatestReadiness(clientId: string): Promise<ReadinessCheck | undefined> {
+    const [latest] = await db
+      .select()
+      .from(readinessChecks)
+      .where(eq(readinessChecks.clientId, clientId))
+      .orderBy(desc(readinessChecks.date))
+      .limit(1);
+    return latest;
+  }
+
+  // Performance Record operations
+  async getPerformanceRecords(eventId: string, clientId?: string): Promise<(PerformanceRecord & { exercise: Exercise })[]> {
+    let query = db
+      .select()
+      .from(performanceRecords)
+      .innerJoin(exercises, eq(performanceRecords.exerciseId, exercises.id))
+      .where(eq(performanceRecords.eventId, eventId));
+
+    if (clientId) {
+      query = query.where(and(
+        eq(performanceRecords.eventId, eventId),
+        eq(performanceRecords.clientId, clientId)
+      ));
+    }
+
+    const records = await query;
+    return records.map(record => ({
+      ...record.performance_records,
+      exercise: record.exercises,
+    }));
+  }
+
+  async createPerformanceRecord(record: InsertPerformanceRecord): Promise<PerformanceRecord> {
+    const [created] = await db.insert(performanceRecords).values(record).returning();
+    return created;
+  }
+
+  async applyProgression(eventId: string): Promise<any> {
+    // Get event and its targets
+    const event = await db.select().from(calendarEvents).where(eq(calendarEvents.id, eventId)).limit(1);
+    if (!event.length) return null;
+
+    const targets = await this.getEventTargets(eventId);
+    const performanceRecords = await this.getPerformanceRecords(eventId);
+
+    // Simple progression logic: adjust targets based on average RPE
+    for (const target of targets) {
+      if (!target.routineExercise) continue;
+
+      const exerciseRecords = performanceRecords.filter(r => r.exerciseId === target.routineExercise!.exerciseId);
+      if (exerciseRecords.length === 0) continue;
+
+      const avgRpe = exerciseRecords.reduce((sum, r) => sum + (r.actual?.rpe || 5), 0) / exerciseRecords.length;
+      const currentTargets = target.targets as any || {};
+
+      // Apply progression based on RPE
+      if (avgRpe < 6) {
+        // Too easy, increase intensity
+        if (currentTargets.reps) currentTargets.reps = Math.min(currentTargets.reps + 1, 20);
+        if (currentTargets.time) currentTargets.time = Math.min(currentTargets.time + 5, 120);
+      } else if (avgRpe > 8) {
+        // Too hard, decrease intensity
+        if (currentTargets.reps) currentTargets.reps = Math.max(currentTargets.reps - 1, 5);
+        if (currentTargets.time) currentTargets.time = Math.max(currentTargets.time - 5, 15);
+      }
+
+      // Update the target for next session
+      await this.updateEventTarget(target.id, { targets: currentTargets });
+    }
+
+    return { message: "Progression applied successfully" };
   }
 }
 

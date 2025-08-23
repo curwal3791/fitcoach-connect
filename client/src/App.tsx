@@ -13,6 +13,7 @@ import Routines from "@/pages/routines";
 import Exercises from "@/pages/exercises";
 import Calendar from "@/pages/calendar";
 import Clients from "@/pages/clients";
+import Programs from "@/pages/programs";
 import Presentation from "@/pages/presentation";
 import CoachConsole from "@/pages/coach-console";
 import CoachConsoleDemo from "@/pages/coach-console-demo";
@@ -34,6 +35,8 @@ function AuthenticatedApp() {
       setCurrentTab("calendar");
     } else if (location === "/clients") {
       setCurrentTab("clients");
+    } else if (location === "/programs") {
+      setCurrentTab("programs");
     } else if (location.startsWith("/presentation")) {
       setCurrentTab("presentation");
     } else {
@@ -55,6 +58,8 @@ function AuthenticatedApp() {
         return <Calendar />;
       case "clients":
         return <Clients />;
+      case "programs":
+        return <Programs />;
       case "presentation":
         return <Presentation />;
       default:
