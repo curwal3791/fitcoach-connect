@@ -194,9 +194,21 @@ export default function ExportRoutine({ routineId, routineName, className }: Exp
           // Extract exercise data from nested structure
           const exercise = routineExercise.exercise || routineExercise;
           const exerciseName = exercise.name || 'Unnamed Exercise';
-          const duration = routineExercise.durationSeconds ? 
-            Math.round(routineExercise.durationSeconds / 60) : 
-            (exercise.duration || '-');
+          
+          // Format duration properly - show seconds if less than 60, otherwise minutes
+          let durationDisplay = '-';
+          if (routineExercise.durationSeconds) {
+            const seconds = routineExercise.durationSeconds;
+            if (seconds < 60) {
+              durationDisplay = `${seconds}s`;
+            } else {
+              const minutes = Math.round(seconds / 60);
+              durationDisplay = `${minutes}min`;
+            }
+          } else if (exercise.duration) {
+            durationDisplay = typeof exercise.duration === 'number' ? `${exercise.duration}min` : exercise.duration.toString();
+          }
+          
           const sets = routineExercise.sets || exercise.sets || '-';
           const reps = routineExercise.repetitions || exercise.reps || '-';
           const difficulty = exercise.difficultyLevel || exercise.difficulty || '-';
@@ -209,7 +221,7 @@ export default function ExportRoutine({ routineId, routineName, className }: Exp
           const rowData = [
             (index + 1).toString(),
             exerciseName.length > 20 ? exerciseName.substring(0, 17) + '...' : exerciseName,
-            typeof duration === 'number' ? `${duration}min` : duration.toString(),
+            durationDisplay,
             sets.toString(),
             reps.toString(),
             difficulty.length > 10 ? difficulty.substring(0, 8) + '..' : difficulty,
