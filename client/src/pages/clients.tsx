@@ -51,10 +51,8 @@ export default function Clients() {
   // Create client mutation
   const createClientMutation = useMutation({
     mutationFn: async (data: InsertClient) => {
-      return await apiRequest("/api/clients", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/clients", data);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
