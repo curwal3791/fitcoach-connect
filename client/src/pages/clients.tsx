@@ -18,6 +18,109 @@ import { insertClientSchema, type Client, type InsertClient } from "@shared/sche
 import { Plus, User, Phone, Mail, Calendar, Target, AlertTriangle, Users, Search } from "lucide-react";
 import { format } from "date-fns";
 
+// Attendance Tab Component
+function AttendanceTab({ clientId }: { clientId: string }) {
+  const { data: attendance = [], isLoading } = useQuery({
+    queryKey: ["/api/attendance/client", clientId],
+  });
+
+  const { data: upcomingEvents = [] } = useQuery({
+    queryKey: ["/api/calendar/events"],
+  });
+
+  const checkInMutation = useMutation({
+    mutationFn: async (data: { eventId: string; status: string }) => {
+      const response = await apiRequest("POST", "/api/attendance", {
+        clientId,
+        eventId: data.eventId,
+        status: data.status,
+        checkedInAt: new Date(),
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/attendance/client", clientId] });
+    },
+  });
+
+  if (isLoading) {
+    return <div>Loading attendance...</div>;
+  }
+
+  const upcomingForClient = upcomingEvents.filter((event: any) => 
+    new Date(event.startTime) > new Date()
+  ).slice(0, 5);
+
+  return (
+    <div className="space-y-6">
+      {/* Quick Check-in Section */}
+      <div>
+        <h4 className="font-medium mb-3">Upcoming Classes</h4>
+        {upcomingForClient.length === 0 ? (
+          <p className="text-gray-500 text-sm">No upcoming classes scheduled</p>
+        ) : (
+          <div className="space-y-2">
+            {upcomingForClient.map((event: any) => (
+              <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <p className="font-medium">{event.title}</p>
+                  <p className="text-sm text-gray-500">
+                    {format(new Date(event.startTime), "MMM d, yyyy 'at' h:mm a")}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => checkInMutation.mutate({ 
+                    eventId: event.id, 
+                    status: "checked_in" 
+                  })}
+                  disabled={checkInMutation.isPending}
+                  data-testid={`button-checkin-${event.id}`}
+                >
+                  Check In
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Attendance History */}
+      <div>
+        <h4 className="font-medium mb-3">Attendance History</h4>
+        {attendance.length === 0 ? (
+          <div className="text-center py-8">
+            <Calendar className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+            <p className="text-gray-500">No attendance records yet</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {attendance.map((record: any) => (
+              <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <p className="font-medium">{record.event?.title || 'Class'}</p>
+                  <p className="text-sm text-gray-500">
+                    {record.checkedInAt ? 
+                      format(new Date(record.checkedInAt), "MMM d, yyyy 'at' h:mm a") :
+                      format(new Date(record.createdAt), "MMM d, yyyy")
+                    }
+                  </p>
+                </div>
+                <Badge 
+                  variant={record.status === "checked_in" ? "default" : 
+                          record.status === "no_show" ? "destructive" : "secondary"}
+                >
+                  {record.status.replace('_', ' ')}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Clients() {
   const { isAuthenticated, isLoading } = useAuth();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -405,19 +508,11 @@ export default function Clients() {
               </TabsContent>
               
               <TabsContent value="progress">
-                <div className="text-center py-8">
-                  <Target className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Progress Tracking</h3>
-                  <p className="text-gray-500">Progress tracking features coming soon!</p>
-                </div>
+                <ProgressTab clientId={selectedClient.id} />
               </TabsContent>
               
               <TabsContent value="attendance">
-                <div className="text-center py-8">
-                  <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Attendance History</h3>
-                  <p className="text-gray-500">Attendance tracking features coming soon!</p>
-                </div>
+                <AttendanceTab clientId={selectedClient.id} />
               </TabsContent>
               
               <TabsContent value="notes">
@@ -432,5 +527,248 @@ export default function Clients() {
         </Dialog>
       )}
     </main>
+  );
+}
+
+// Progress Tab Component
+function ProgressTab({ clientId }: { clientId: string }) {
+  const [selectedExercise, setSelectedExercise] = useState<string>("");
+  const { data: progress = [], isLoading } = useQuery({
+    queryKey: ["/api/progress-metrics/client", clientId],
+  });
+
+  const { data: exercises = [] } = useQuery({
+    queryKey: ["/api/exercises"],
+  });
+
+  const [isAddingProgress, setIsAddingProgress] = useState(false);
+  const queryClient = useQueryClient();
+
+  const progressForm = useForm({
+    defaultValues: {
+      exerciseId: "",
+      metricType: "weight",
+      value: "",
+      unit: "kg",
+      rpe: 5,
+      notes: "",
+    },
+  });
+
+  const addProgressMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/progress-metrics", {
+        clientId,
+        ...data,
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/progress-metrics/client", clientId] });
+      setIsAddingProgress(false);
+      progressForm.reset();
+    },
+  });
+
+  const handleAddProgress = (data: any) => {
+    addProgressMutation.mutate(data);
+  };
+
+  if (isLoading) {
+    return <div>Loading progress...</div>;
+  }
+
+  const exerciseOptions = exercises.map((ex: any) => ({ 
+    id: ex.id, 
+    name: ex.name 
+  }));
+
+  const filteredProgress = selectedExercise 
+    ? progress.filter((p: any) => p.exerciseId === selectedExercise)
+    : progress;
+
+  return (
+    <div className="space-y-6">
+      {/* Add Progress Section */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h4 className="font-medium">Progress Tracking</h4>
+          <p className="text-sm text-gray-500">Track client's performance metrics</p>
+        </div>
+        <Button 
+          onClick={() => setIsAddingProgress(true)}
+          size="sm"
+          data-testid="button-add-progress"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Progress
+        </Button>
+      </div>
+
+      {/* Exercise Filter */}
+      <div>
+        <Label>Filter by Exercise</Label>
+        <Select value={selectedExercise} onValueChange={setSelectedExercise}>
+          <SelectTrigger>
+            <SelectValue placeholder="All exercises" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All exercises</SelectItem>
+            {exerciseOptions.map((exercise: any) => (
+              <SelectItem key={exercise.id} value={exercise.id}>
+                {exercise.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Progress Records */}
+      {filteredProgress.length === 0 ? (
+        <div className="text-center py-8">
+          <Target className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+          <p className="text-gray-500">No progress records yet</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredProgress.map((record: any) => (
+            <Card key={record.id}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium">{record.exercise?.name || 'Exercise'}</p>
+                    <p className="text-sm text-gray-500 capitalize">{record.metricType}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{record.value} {record.unit}</p>
+                    {record.rpe && (
+                      <p className="text-sm text-gray-500">RPE: {record.rpe}/10</p>
+                    )}
+                  </div>
+                </div>
+                {record.notes && (
+                  <p className="text-sm text-gray-600 mt-2">{record.notes}</p>
+                )}
+                <p className="text-xs text-gray-400 mt-1">
+                  {format(new Date(record.recordedAt), "MMM d, yyyy 'at' h:mm a")}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Add Progress Dialog */}
+      <Dialog open={isAddingProgress} onOpenChange={setIsAddingProgress}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Progress Record</DialogTitle>
+            <DialogDescription>
+              Record a new performance metric for this client
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={progressForm.handleSubmit(handleAddProgress)} className="space-y-4">
+            <div>
+              <Label>Exercise</Label>
+              <Select onValueChange={(value) => progressForm.setValue("exerciseId", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select exercise" />
+                </SelectTrigger>
+                <SelectContent>
+                  {exerciseOptions.map((exercise: any) => (
+                    <SelectItem key={exercise.id} value={exercise.id}>
+                      {exercise.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Metric Type</Label>
+                <Select onValueChange={(value) => progressForm.setValue("metricType", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weight">Weight</SelectItem>
+                    <SelectItem value="reps">Reps</SelectItem>
+                    <SelectItem value="time">Time</SelectItem>
+                    <SelectItem value="distance">Distance</SelectItem>
+                    <SelectItem value="body_weight">Body Weight</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Unit</Label>
+                <Select onValueChange={(value) => progressForm.setValue("unit", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="lbs">lbs</SelectItem>
+                    <SelectItem value="seconds">seconds</SelectItem>
+                    <SelectItem value="minutes">minutes</SelectItem>
+                    <SelectItem value="meters">meters</SelectItem>
+                    <SelectItem value="km">km</SelectItem>
+                    <SelectItem value="reps">reps</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Value</Label>
+                <Input
+                  {...progressForm.register("value")}
+                  placeholder="e.g., 100"
+                  data-testid="input-progress-value"
+                />
+              </div>
+              <div>
+                <Label>RPE (1-10)</Label>
+                <Input
+                  {...progressForm.register("rpe", { valueAsNumber: true })}
+                  type="number"
+                  min="1"
+                  max="10"
+                  placeholder="5"
+                  data-testid="input-progress-rpe"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                {...progressForm.register("notes")}
+                placeholder="Any additional notes..."
+                data-testid="input-progress-notes"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddingProgress(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={addProgressMutation.isPending}
+                data-testid="button-save-progress"
+              >
+                {addProgressMutation.isPending ? "Saving..." : "Save Progress"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
