@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatsCard from "@/components/stats-card";
-import { Plus, Play, Edit, ListCheck, CalendarDays, Clock, Users2, TrendingUp, BarChart3, PieChart, Zap, Search, Calendar, BookOpen, Target, Timer } from "lucide-react";
+import { Plus, Play, Edit, ListCheck, CalendarDays, Clock, Users2, TrendingUp, BarChart3, PieChart, Zap, Search, Calendar, BookOpen, Target, Timer, Users } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, LineChart, Line, Area, AreaChart, Pie } from 'recharts';
 import { apiRequest } from "@/lib/queryClient";
 
@@ -107,6 +107,11 @@ export default function Dashboard() {
 
   const { data: classTypes, isLoading: classTypesLoading } = useQuery<ClassType[]>({
     queryKey: ["/api/class-types"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ["/api/clients"],
     enabled: isAuthenticated,
   });
 
@@ -262,6 +267,13 @@ export default function Dashboard() {
       icon: Target,
       color: "bg-pink-500",
       action: () => setLocation('/classes')
+    },
+    {
+      title: "Manage Clients",
+      description: "Track client progress",
+      icon: Users,
+      color: "bg-teal-500",
+      action: () => setLocation('/clients')
     },
     {
       title: "Quick Timer",

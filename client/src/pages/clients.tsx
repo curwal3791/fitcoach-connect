@@ -516,11 +516,7 @@ export default function Clients() {
               </TabsContent>
               
               <TabsContent value="notes">
-                <div className="text-center py-8">
-                  <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Client Notes</h3>
-                  <p className="text-gray-500">Notes and communication features coming soon!</p>
-                </div>
+                <NotesTab clientId={selectedClient.id} />
               </TabsContent>
             </Tabs>
           </DialogContent>
@@ -764,6 +760,160 @@ function ProgressTab({ clientId }: { clientId: string }) {
                 data-testid="button-save-progress"
               >
                 {addProgressMutation.isPending ? "Saving..." : "Save Progress"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// Notes Tab Component
+function NotesTab({ clientId }: { clientId: string }) {
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const { data: notes = [], isLoading } = useQuery({
+    queryKey: ["/api/client-notes", clientId],
+  });
+
+  const queryClient = useQueryClient();
+
+  const noteForm = useForm({
+    defaultValues: {
+      note: "",
+      noteType: "general",
+    },
+  });
+
+  const addNoteMutation = useMutation({
+    mutationFn: async (data: { note: string; noteType: string }) => {
+      const response = await apiRequest("POST", "/api/client-notes", {
+        clientId,
+        ...data,
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/client-notes", clientId] });
+      setIsAddingNote(false);
+      noteForm.reset();
+    },
+  });
+
+  const handleAddNote = (data: { note: string; noteType: string }) => {
+    addNoteMutation.mutate(data);
+  };
+
+  if (isLoading) {
+    return <div>Loading notes...</div>;
+  }
+
+  const noteTypeColors = {
+    general: "bg-gray-100 text-gray-800",
+    progress: "bg-blue-100 text-blue-800", 
+    injury: "bg-red-100 text-red-800",
+    goal: "bg-green-100 text-green-800",
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Add Note Section */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h4 className="font-medium">Client Notes</h4>
+          <p className="text-sm text-gray-500">Track important information and communications</p>
+        </div>
+        <Button 
+          onClick={() => setIsAddingNote(true)}
+          size="sm"
+          data-testid="button-add-note"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Note
+        </Button>
+      </div>
+
+      {/* Notes List */}
+      {notes.length === 0 ? (
+        <div className="text-center py-8">
+          <User className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+          <p className="text-gray-500">No notes yet</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {notes.map((note: any) => (
+            <Card key={note.id}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <Badge 
+                    className={noteTypeColors[note.noteType as keyof typeof noteTypeColors] || noteTypeColors.general}
+                    variant="secondary"
+                  >
+                    {note.noteType}
+                  </Badge>
+                  <p className="text-xs text-gray-400">
+                    {format(new Date(note.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                  </p>
+                </div>
+                <p className="text-sm text-gray-700">{note.note}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Add Note Dialog */}
+      <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Client Note</DialogTitle>
+            <DialogDescription>
+              Add a note about this client for future reference
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={noteForm.handleSubmit(handleAddNote)} className="space-y-4">
+            <div>
+              <Label>Note Type</Label>
+              <Select onValueChange={(value) => noteForm.setValue("noteType", value)} defaultValue="general">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select note type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General</SelectItem>
+                  <SelectItem value="progress">Progress</SelectItem>
+                  <SelectItem value="injury">Injury/Medical</SelectItem>
+                  <SelectItem value="goal">Goal Setting</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Note</Label>
+              <Textarea
+                {...noteForm.register("note", { required: "Note is required" })}
+                placeholder="Enter your note here..."
+                rows={4}
+                data-testid="input-note-content"
+              />
+              {noteForm.formState.errors.note && (
+                <p className="text-sm text-red-600">{noteForm.formState.errors.note.message}</p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddingNote(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={addNoteMutation.isPending}
+                data-testid="button-save-note"
+              >
+                {addNoteMutation.isPending ? "Saving..." : "Save Note"}
               </Button>
             </div>
           </form>
