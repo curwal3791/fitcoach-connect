@@ -126,7 +126,14 @@ function CoachConsole() {
 
   // Start session mutation
   const startSessionMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/events/${eventId}/start`, { method: "POST" }),
+    mutationFn: async () => {
+      const response = await fetch(`/api/events/${eventId}/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error(`Failed to start session: ${response.statusText}`);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events", eventId, "console"] });
       toast({ title: "Session started!", description: "Class is now in progress" });
@@ -135,11 +142,15 @@ function CoachConsole() {
 
   // Complete session mutation
   const completeSessionMutation = useMutation({
-    mutationFn: (notes: string) => 
-      apiRequest(`/api/events/${eventId}/complete`, { 
-        method: "POST", 
-        body: JSON.stringify({ sessionNotes: notes }) 
-      }),
+    mutationFn: async (notes: string) => {
+      const response = await fetch(`/api/events/${eventId}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionNotes: notes }),
+      });
+      if (!response.ok) throw new Error(`Failed to complete session: ${response.statusText}`);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events", eventId, "console"] });
       toast({ title: "Session completed!", description: "Class summary generated" });
@@ -148,11 +159,15 @@ function CoachConsole() {
 
   // Check-in mutation
   const checkinMutation = useMutation({
-    mutationFn: ({ clientId, status }: { clientId: string; status: string }) =>
-      apiRequest(`/api/events/${eventId}/checkin`, {
+    mutationFn: async ({ clientId, status }: { clientId: string; status: string }) => {
+      const response = await fetch(`/api/events/${eventId}/checkin`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clientId, status }),
-      }),
+      });
+      if (!response.ok) throw new Error(`Failed to update attendance: ${response.statusText}`);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events", eventId, "console"] });
       toast({ title: "Attendance updated", description: "Client check-in recorded" });
@@ -161,11 +176,15 @@ function CoachConsole() {
 
   // Record metrics mutation
   const recordMetricsMutation = useMutation({
-    mutationFn: (metrics: any[]) =>
-      apiRequest(`/api/events/${eventId}/metrics`, {
+    mutationFn: async (metrics: any[]) => {
+      const response = await fetch(`/api/events/${eventId}/metrics`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(metrics),
-      }),
+      });
+      if (!response.ok) throw new Error(`Failed to record metrics: ${response.statusText}`);
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Metrics saved", description: "Performance data recorded" });
     },
@@ -194,9 +213,9 @@ function CoachConsole() {
     );
   }
 
-  const { event, routine, enrolledClients, attendanceRecords } = consoleData;
-  const isSessionActive = event.sessionStatus === "in_progress";
-  const isSessionCompleted = event.sessionStatus === "completed";
+  const { event, routine, enrolledClients, attendanceRecords } = consoleData || {};
+  const isSessionActive = event?.sessionStatus === "in_progress";
+  const isSessionCompleted = event?.sessionStatus === "completed";
   const currentExercise = routine?.exercises?.[currentExerciseIndex];
 
   const handleCheckIn = (clientId: string, status: string) => {
@@ -204,7 +223,9 @@ function CoachConsole() {
   };
 
   const handleCompleteSession = () => {
-    completeSessionMutation.mutate(sessionNotes);
+    if (event) {
+      completeSessionMutation.mutate(sessionNotes);
+    }
   };
 
   const handleNextExercise = () => {
@@ -219,22 +240,22 @@ function CoachConsole() {
     }
   };
 
-  const attendanceMap = new Map(attendanceRecords.map((a: any) => [a.clientId, a.status]));
+  const attendanceMap = new Map(attendanceRecords?.map((a: any) => [a.clientId, a.status]) || []);
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8" data-testid="coach-console">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{event.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{event?.title}</h1>
           <p className="text-gray-600">
-            {new Date(event.startDatetime).toLocaleDateString()} at {event.location || "Studio"}
+            {event?.startDatetime ? new Date(event.startDatetime).toLocaleDateString() : "TBD"} at {event?.location || "Studio"}
           </p>
           <Badge 
             variant={isSessionActive ? "default" : isSessionCompleted ? "secondary" : "outline"}
             className="mt-2"
           >
-            {event.sessionStatus?.replace('_', ' ').toUpperCase() || "SCHEDULED"}
+            {event?.sessionStatus?.replace('_', ' ').toUpperCase() || "SCHEDULED"}
           </Badge>
         </div>
         
@@ -271,12 +292,12 @@ function CoachConsole() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Users className="w-5 h-5 mr-2" />
-                Class Roster ({enrolledClients.length})
+                Class Roster ({enrolledClients?.length || 0})
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {enrolledClients.map((client: any) => {
+                {enrolledClients?.map((client: any) => {
                   const status = attendanceMap.get(client.id);
                   const isPresent = status === "present";
                   
@@ -310,7 +331,7 @@ function CoachConsole() {
                   );
                 })}
                 
-                {enrolledClients.length === 0 && (
+                {(!enrolledClients || enrolledClients.length === 0) && (
                   <p className="text-gray-500 text-center py-4">No clients enrolled</p>
                 )}
               </div>
