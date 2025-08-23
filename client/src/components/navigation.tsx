@@ -41,10 +41,14 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
+            <button 
+              className="flex-shrink-0 flex items-center hover:opacity-80 transition-opacity"
+              onClick={() => window.open('/', '_blank')}
+              data-testid="button-logo-home"
+            >
               <Dumbbell className="text-primary text-xl mr-3" />
               <span className="text-xl font-bold text-gray-900">FitFlow</span>
-            </div>
+            </button>
             <div className="hidden md:block ml-10">
               <div className="flex items-baseline space-x-4">
                 {navigation.map((item) => (
@@ -75,16 +79,7 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
               <GlobalSearch />
             </div>
 
-            {/* Back to Landing */}
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.open('/', '_blank')}
-              className="hidden md:flex"
-              data-testid="button-back-to-landing"
-            >
-              Back to Home
-            </Button>
+
             
             <Button 
               variant="ghost" 
@@ -105,13 +100,7 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuItem 
-                  onClick={() => window.open('/', '_blank')}
-                  className="cursor-pointer md:hidden"
-                  data-testid="menu-back-to-home"
-                >
-                  Back to Home
-                </DropdownMenuItem>
+
                 <DropdownMenuItem asChild>
                   <a href="/api/logout" className="w-full flex items-center" data-testid="link-logout">
                     <LogOut className="mr-2 h-4 w-4" />
