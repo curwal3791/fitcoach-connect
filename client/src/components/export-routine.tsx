@@ -124,7 +124,7 @@ export default function ExportRoutine({ routineId, routineName, className }: Exp
       pdf.setFontSize(12);
       pdf.setFont("helvetica", "normal");
       const duration = routine.totalDuration ? formatDuration(routine.totalDuration) : "0min";
-      const exerciseCount = routine.exerciseCount || 0;
+      const exerciseCount = routine.exercises ? routine.exercises.length : 0;
       pdf.text(`Duration: ${duration} | Exercises: ${exerciseCount}`, margin, yPosition);
       yPosition += 8;
 
