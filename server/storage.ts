@@ -1086,16 +1086,19 @@ export class DatabaseStorage implements IStorage {
 
   // Progress Metrics operations
   async getClientProgress(clientId: string, exerciseId?: string): Promise<ProgressMetric[]> {
-    let query = db
-      .select()
-      .from(progressMetrics)
-      .where(eq(progressMetrics.clientId, clientId));
-
     if (exerciseId) {
-      query = query.where(and(eq(progressMetrics.clientId, clientId), eq(progressMetrics.exerciseId, exerciseId))) as any;
+      return await db
+        .select()
+        .from(progressMetrics)
+        .where(and(eq(progressMetrics.clientId, clientId), eq(progressMetrics.exerciseId, exerciseId)))
+        .orderBy(desc(progressMetrics.recordedAt));
+    } else {
+      return await db
+        .select()
+        .from(progressMetrics)
+        .where(eq(progressMetrics.clientId, clientId))
+        .orderBy(desc(progressMetrics.recordedAt));
     }
-
-    return await query.orderBy(desc(progressMetrics.recordedAt));
   }
 
   async createProgressMetric(metric: InsertProgressMetric): Promise<ProgressMetric> {

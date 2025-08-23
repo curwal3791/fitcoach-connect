@@ -53,7 +53,7 @@ export default function Clients() {
     mutationFn: async (data: InsertClient) => {
       return await apiRequest("/api/clients", {
         method: "POST",
-        body: data,
+        body: JSON.stringify(data),
       });
     },
     onSuccess: () => {
@@ -78,11 +78,11 @@ export default function Clients() {
     createClientMutation.mutate(data);
   };
 
-  // Filter clients based on search
-  const filteredClients = clients.filter((client: Client) =>
+  // Filter clients based on search  
+  const filteredClients = Array.isArray(clients) ? clients.filter((client: Client) =>
     `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) : [];
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -322,7 +322,7 @@ export default function Clients() {
                   )}
                   <div className="flex items-center gap-2 text-gray-500 text-xs">
                     <Calendar className="h-3 w-3" />
-                    Added {format(new Date(client.createdAt), "MMM d, yyyy")}
+                    Added {client.createdAt ? format(new Date(client.createdAt), "MMM d, yyyy") : "Recently"}
                   </div>
                 </div>
               </CardContent>

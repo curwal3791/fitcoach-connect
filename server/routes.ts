@@ -486,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(client);
     } catch (error) {
       console.error("Error creating client:", error);
-      res.status(400).json({ message: "Failed to create client", error: error.message });
+      res.status(400).json({ message: "Failed to create client", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -497,7 +497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(client);
     } catch (error) {
       console.error("Error updating client:", error);
-      res.status(400).json({ message: "Failed to update client", error: error.message });
+      res.status(400).json({ message: "Failed to update client", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -534,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(note);
     } catch (error) {
       console.error("Error creating client note:", error);
-      res.status(400).json({ message: "Failed to create client note", error: error.message });
+      res.status(400).json({ message: "Failed to create client note", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -567,7 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(attendance);
     } catch (error) {
       console.error("Error creating attendance:", error);
-      res.status(400).json({ message: "Failed to create attendance", error: error.message });
+      res.status(400).json({ message: "Failed to create attendance", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -578,7 +578,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(attendance);
     } catch (error) {
       console.error("Error updating attendance:", error);
-      res.status(400).json({ message: "Failed to update attendance", error: error.message });
+      res.status(400).json({ message: "Failed to update attendance", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -601,7 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(metric);
     } catch (error) {
       console.error("Error creating progress metric:", error);
-      res.status(400).json({ message: "Failed to create progress metric", error: error.message });
+      res.status(400).json({ message: "Failed to create progress metric", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
