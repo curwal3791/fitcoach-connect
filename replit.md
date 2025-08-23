@@ -52,6 +52,11 @@ Preferred communication style: Simple, everyday language.
 - **Routines**: Structured workout plans with exercise sequences
 - **Calendar Events**: Scheduling system for fitness classes
 - **Routine Exercises**: Junction table for exercise ordering within routines
+- **Programs**: Multi-week training program templates with adaptive progression
+- **Program Sessions**: Individual training sessions within programs with progression rules
+- **Program Enrollments**: Client enrollments in programs with progress tracking
+- **Performance Records**: Exercise-specific performance data and RPE feedback
+- **Readiness Checks**: Daily client readiness assessments for program adaptation
 
 ### Application Features
 - **Dashboard**: Analytics and quick access to recent activities ✓ COMPLETED
@@ -62,6 +67,7 @@ Preferred communication style: Simple, everyday language.
 - **Presentation Mode**: Full-screen presentation interface for conducting classes ✓ COMPLETED
 - **Coach Console**: Event-aware live session management with real-time check-in, timers, and metrics ✓ COMPLETED
 - **Client Management**: Complete client profiles, progress tracking, and attendance system ✓ COMPLETED
+- **Adaptive Program Builder**: Multi-week training programs with intelligent progression algorithms, RPE-based adjustments, performance tracking, and automatic calendar scheduling ✓ COMPLETED
 - **Responsive Design**: Mobile-first approach with cross-device compatibility ✓ COMPLETED
 
 ### Current Status & Next Steps
@@ -82,7 +88,8 @@ Preferred communication style: Simple, everyday language.
 - ✅ **Class Enrollment System**: Proper client-to-event enrollment with enrollment management interface
 - ✅ **Attendance Tracking**: Shows only enrolled classes, proper client check-in workflow
 - ✅ **Event-Aware Coach Console**: Complete live session management system with real-time check-in, exercise timers, performance tracking, session summaries, and seamless Presentation Mode integration
-- 🔄 **Next**: Advanced reporting and analytics features
+- ✅ **Adaptive Program Builder**: Complete multi-week program system with intelligent progression, RPE-based adjustments, client enrollment, performance tracking, and calendar integration ✓ COMPLETED (Aug 23, 2025)
+- 🔄 **Next**: Advanced reporting and analytics features across all program types
 
 ### Development Architecture
 - **Monorepo Structure**: Shared schema and types between client and server

@@ -91,6 +91,7 @@ function Router() {
           <Route path="/routines" component={AuthenticatedApp} />
           <Route path="/classes" component={AuthenticatedApp} />
           <Route path="/exercises" component={AuthenticatedApp} />
+          <Route path="/programs" component={AuthenticatedApp} />
           <Route path="/calendar" component={AuthenticatedApp} />
           <Route path="/clients" component={AuthenticatedApp} />
           <Route path="/presentation" component={AuthenticatedApp} />
