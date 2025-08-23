@@ -139,22 +139,22 @@ export default function ExportRoutine({ routineId, routineName, className }: Exp
 
       // Only create table if there are exercises
       if (routine.exercises && routine.exercises.length > 0) {
-        // Table Header
-        const colWidths = [15, 50, 25, 20, 20, 25, 35]; // Column widths
-        const rowHeight = 8;
+        // Table Header with more compact columns
+        const colWidths = [8, 35, 15, 12, 12, 18, 20, 25, 15]; // Condensed column widths
+        const rowHeight = 7; // Smaller row height
         
         // Draw header background
         pdf.setFillColor(240, 240, 240);
         pdf.rect(margin, yPosition - 2, pageWidth - 2 * margin, rowHeight + 4, 'F');
         
         // Header text
-        pdf.setFontSize(10);
+        pdf.setFontSize(8); // Smaller font for headers
         pdf.setFont("helvetica", "bold");
-        let xPosition = margin + 2;
+        let xPosition = margin + 1;
         
-        const headers = ['#', 'Exercise Name', 'Duration', 'Sets', 'Reps', 'Difficulty', 'Equipment'];
+        const headers = ['#', 'Exercise Name', 'Time', 'Sets', 'Reps', 'Difficulty', 'Equipment', 'Music/Song', 'BPM'];
         headers.forEach((header, index) => {
-          pdf.text(header, xPosition, yPosition + 5);
+          pdf.text(header, xPosition, yPosition + 4);
           xPosition += colWidths[index];
         });
         
@@ -162,9 +162,9 @@ export default function ExportRoutine({ routineId, routineName, className }: Exp
 
         // Table rows
         pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(9);
+        pdf.setFontSize(7); // Smaller font for data
         
-        routine.exercises.forEach((exercise, index) => {
+        routine.exercises.forEach((routineExercise, index) => {
           // Check if we need a new page
           if (yPosition + rowHeight > pageHeight - 30) {
             pdf.addPage();
@@ -175,37 +175,51 @@ export default function ExportRoutine({ routineId, routineName, className }: Exp
             pdf.rect(margin, yPosition - 2, pageWidth - 2 * margin, rowHeight + 4, 'F');
             
             pdf.setFont("helvetica", "bold");
-            pdf.setFontSize(10);
-            xPosition = margin + 2;
+            pdf.setFontSize(8);
+            xPosition = margin + 1;
             headers.forEach((header, idx) => {
-              pdf.text(header, xPosition, yPosition + 5);
+              pdf.text(header, xPosition, yPosition + 4);
               xPosition += colWidths[idx];
             });
             
             yPosition += rowHeight + 4;
             pdf.setFont("helvetica", "normal");
-            pdf.setFontSize(9);
+            pdf.setFontSize(7);
           }
 
           // Draw row border
           pdf.setDrawColor(200, 200, 200);
           pdf.rect(margin, yPosition - 2, pageWidth - 2 * margin, rowHeight + 4);
           
-          // Row data
-          xPosition = margin + 2;
+          // Extract exercise data from nested structure
+          const exercise = routineExercise.exercise || routineExercise;
+          const exerciseName = exercise.name || 'Unnamed Exercise';
+          const duration = routineExercise.durationSeconds ? 
+            Math.round(routineExercise.durationSeconds / 60) : 
+            (exercise.duration || '-');
+          const sets = routineExercise.sets || exercise.sets || '-';
+          const reps = routineExercise.repetitions || exercise.reps || '-';
+          const difficulty = exercise.difficultyLevel || exercise.difficulty || '-';
+          const equipment = exercise.equipmentNeeded || exercise.equipment || '-';
+          const music = routineExercise.musicTitle || '-';
+          const bpm = routineExercise.musicNotes || '-';
+          
+          // Row data with truncation for long text
+          xPosition = margin + 1;
           const rowData = [
             (index + 1).toString(),
-            exercise.name && exercise.name.length > 25 ? exercise.name.substring(0, 22) + '...' : (exercise.name || 'Unnamed Exercise'),
-            exercise.duration ? `${exercise.duration}min` : '-',
-            exercise.sets ? exercise.sets.toString() : '-',
-            exercise.reps ? exercise.reps.toString() : '-',
-            exercise.difficulty || '-',
-            exercise.equipment && exercise.equipment.length > 15 ? 
-              exercise.equipment.substring(0, 12) + '...' : (exercise.equipment || '-')
+            exerciseName.length > 20 ? exerciseName.substring(0, 17) + '...' : exerciseName,
+            typeof duration === 'number' ? `${duration}min` : duration.toString(),
+            sets.toString(),
+            reps.toString(),
+            difficulty.length > 10 ? difficulty.substring(0, 8) + '..' : difficulty,
+            equipment.length > 12 ? equipment.substring(0, 10) + '..' : equipment,
+            music.length > 15 ? music.substring(0, 13) + '..' : music,
+            bpm.toString()
           ];
           
           rowData.forEach((data, idx) => {
-            pdf.text(data || '', xPosition, yPosition + 5);
+            pdf.text(data || '', xPosition, yPosition + 4);
             xPosition += colWidths[idx];
           });
           
@@ -213,7 +227,11 @@ export default function ExportRoutine({ routineId, routineName, className }: Exp
         });
 
         // Add exercise descriptions section if any exist
-        const exercisesWithDescriptions = routine.exercises.filter(ex => ex.description);
+        const exercisesWithDescriptions = routine.exercises.filter(routineEx => {
+          const exercise = routineEx.exercise || routineEx;
+          return exercise.description;
+        });
+        
         if (exercisesWithDescriptions.length > 0) {
           yPosition += 10;
           
@@ -223,31 +241,34 @@ export default function ExportRoutine({ routineId, routineName, className }: Exp
             yPosition = margin;
           }
           
-          pdf.setFontSize(12);
+          pdf.setFontSize(10);
           pdf.setFont("helvetica", "bold");
           pdf.text("Exercise Descriptions:", margin, yPosition);
-          yPosition += 10;
+          yPosition += 8;
           
-          pdf.setFontSize(9);
+          pdf.setFontSize(8);
           pdf.setFont("helvetica", "normal");
           
-          exercisesWithDescriptions.forEach((exercise) => {
-            const exerciseIndex = routine.exercises.findIndex(ex => ex.id === exercise.id) + 1;
+          exercisesWithDescriptions.forEach((routineExercise, descIndex) => {
+            const exercise = routineExercise.exercise || routineExercise;
+            const exerciseIndex = routine.exercises.findIndex(ex => 
+              (ex.exercise?.id || ex.id) === (exercise.id || routineExercise.exerciseId)
+            ) + 1;
             
-            if (yPosition > pageHeight - 30) {
+            if (yPosition > pageHeight - 25) {
               pdf.addPage();
               yPosition = margin;
             }
             
             pdf.setFont("helvetica", "bold");
             pdf.text(`${exerciseIndex}. ${exercise.name || 'Unnamed Exercise'}:`, margin, yPosition);
-            yPosition += 6;
+            yPosition += 5;
             
             pdf.setFont("helvetica", "normal");
             if (exercise.description) {
               const splitDesc = pdf.splitTextToSize(exercise.description, pageWidth - 2 * margin - 5);
-              pdf.text(splitDesc, margin + 5, yPosition);
-              yPosition += splitDesc.length * 4 + 8;
+              pdf.text(splitDesc, margin + 3, yPosition);
+              yPosition += splitDesc.length * 3.5 + 6;
             }
           });
         }
