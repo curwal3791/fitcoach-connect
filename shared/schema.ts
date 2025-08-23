@@ -662,3 +662,5 @@ export type InsertProgramEnrollment = z.infer<typeof insertProgramEnrollmentSche
 export type InsertEventTarget = z.infer<typeof insertEventTargetSchema>;
 export type InsertReadinessCheck = z.infer<typeof insertReadinessCheckSchema>;
 export type InsertPerformanceRecord = z.infer<typeof insertPerformanceRecordSchema>;
+
+

@@ -33,10 +33,10 @@ Preferred communication style: Simple, everyday language.
 - **Development**: Hot module replacement and development tooling integration
 
 ### Authentication System
-- **Provider**: Replit Auth integration for OAuth-based authentication
+- **Provider**: Email/password authentication with JWT tokens and secure session management
+- **Security**: Bcrypt password hashing, JWT tokens, HTTP-only sessions, and PostgreSQL storage
 - **Session Management**: Express sessions with PostgreSQL storage using connect-pg-simple
-- **Security**: HTTP-only cookies, secure session handling, and CSRF protection
-- **User Management**: Automatic user creation and profile management
+- **User Management**: Professional registration/login system with form validation
 
 ### Data Storage
 - **Database**: PostgreSQL as the primary database

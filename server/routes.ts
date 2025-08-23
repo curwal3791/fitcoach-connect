@@ -28,9 +28,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      // req.user is already the full user object from our auth middleware
+      const user = req.user;
+      res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -40,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard stats
   app.get('/api/dashboard/stats', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const stats = await storage.getUserStats(userId);
       res.json(stats);
     } catch (error) {
@@ -52,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Analytics data
   app.get('/api/dashboard/analytics', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const analytics = await storage.getAnalyticsData(userId);
       res.json(analytics);
     } catch (error) {
@@ -64,7 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Class Types routes
   app.get('/api/class-types', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const classTypes = await storage.getClassTypes(userId);
       res.json(classTypes);
     } catch (error) {
@@ -75,7 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/class-types', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const data = insertClassTypeSchema.parse({
         ...req.body,
         createdByUserId: userId,
@@ -118,7 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Exercises routes
   app.get('/api/exercises', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { search, category, difficulty, equipment, classType } = req.query;
       const exercises = await storage.getExercises({
         search: search as string,
@@ -151,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/exercises', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const data = insertExerciseSchema.parse({
         ...req.body,
         createdByUserId: userId,
@@ -190,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Routines routes
   app.get('/api/routines', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const routines = await storage.getRoutines(userId);
       res.json(routines);
     } catch (error) {
@@ -215,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/routines', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const data = insertRoutineSchema.parse({
         ...req.body,
         createdByUserId: userId,
@@ -255,7 +261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { name } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       if (!name) {
         return res.status(400).json({ message: "Name is required" });
@@ -339,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Calendar routes
   app.get('/api/calendar/events', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { start, end } = req.query;
       const startDate = start ? new Date(start as string) : undefined;
       const endDate = end ? new Date(end as string) : undefined;
@@ -354,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/calendar/events', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Convert string dates to Date objects before validation
       const requestData = {
@@ -424,7 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/routines/:id/save', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const saved = await storage.saveRoutine(userId, id);
       res.status(201).json(saved);
     } catch (error) {
@@ -436,7 +442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/routines/:id/save', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       await storage.unsaveRoutine(userId, id);
       res.status(204).send();
     } catch (error) {
@@ -447,7 +453,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/saved-routines', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const savedRoutines = await storage.getUserSavedRoutines(userId);
       res.json(savedRoutines);
     } catch (error) {
@@ -459,7 +465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Client Management routes
   app.get('/api/clients', isAuthenticated, async (req: any, res) => {
     try {
-      const trainerId = req.user.claims.sub;
+      const trainerId = req.user.id;
       const clients = await storage.getClients(trainerId);
       res.json(clients);
     } catch (error) {
@@ -483,7 +489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/clients', isAuthenticated, async (req: any, res) => {
     try {
-      const trainerId = req.user.claims.sub;
+      const trainerId = req.user.id;
       const clientData = insertClientSchema.parse({
         ...req.body,
         trainerId,
@@ -530,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/clients/:clientId/notes', isAuthenticated, async (req: any, res) => {
     try {
-      const trainerId = req.user.claims.sub;
+      const trainerId = req.user.id;
       const noteData = insertClientNoteSchema.parse({
         ...req.body,
         clientId: req.params.clientId,
@@ -729,7 +735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Program Management Routes - Adaptive Program Builder
   app.get('/api/programs', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const programs = await storage.getPrograms(userId);
       res.json(programs);
     } catch (error) {
@@ -753,7 +759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/programs', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const programData = insertProgramSchema.parse({
         ...req.body,
         createdBy: userId,

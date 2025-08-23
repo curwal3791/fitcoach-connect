@@ -114,8 +114,8 @@ export async function setupAuth(app: Express) {
       const user = await storage.createUser({
         email: validatedData.email,
         passwordHash,
-        firstName: validatedData.firstName,
-        lastName: validatedData.lastName,
+        firstName: validatedData.firstName || undefined,
+        lastName: validatedData.lastName || undefined,
         emailVerified: true, // For demo purposes, skip email verification
       });
 
