@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dumbbell, Bell, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import GlobalSearch from "@/components/global-search";
 
 interface NavigationProps {
   currentTab: string;
@@ -67,6 +68,11 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
           </div>
           
           <div className="flex items-center space-x-4">
+            {/* Global Search */}
+            <div className="hidden md:block">
+              <GlobalSearch />
+            </div>
+            
             <Button 
               variant="ghost" 
               size="sm" 
@@ -80,8 +86,8 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-testid="button-user-menu">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.profileImageUrl || ''} alt="Profile" />
-                    <AvatarFallback>{getInitials(user?.firstName, user?.lastName)}</AvatarFallback>
+                    <AvatarImage src={(user as any)?.profileImageUrl || ''} alt="Profile" />
+                    <AvatarFallback>{getInitials((user as any)?.firstName, (user as any)?.lastName)}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
