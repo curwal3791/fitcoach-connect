@@ -343,6 +343,126 @@ export default function Calendar() {
         </Dialog>
       </div>
 
+      {/* Upcoming Classes List */}
+      <div className="mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
+              <CalendarIcon className="w-5 h-5 mr-2 text-primary" />
+              Upcoming Classes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {eventsLoading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {events && events
+                  .filter(event => new Date(event.startDatetime) > new Date())
+                  .slice(0, 5)
+                  .map((event, index) => (
+                    <div 
+                      key={event.id}
+                      className={`flex items-center justify-between p-4 rounded-lg border-l-4 ${getColorForIndex(index)} hover:bg-gray-50 transition-colors cursor-pointer`}
+                      onClick={() => setSelectedDate(new Date(event.startDatetime))}
+                      data-testid={`upcoming-event-${event.id}`}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-lg" data-testid={`event-title-${event.id}`}>
+                            {event.title}
+                          </h3>
+                          <div className="flex items-center space-x-2">
+                            <ClassEnrollment 
+                              eventId={event.id} 
+                              eventTitle={event.title}
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditEvent(event);
+                              }}
+                              data-testid={`button-edit-upcoming-${event.id}`}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteEvent(event.id);
+                              }}
+                              data-testid={`button-delete-upcoming-${event.id}`}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                          <div className="flex items-center">
+                            <Clock className="w-4 h-4 mr-1" />
+                            <span>
+                              {formatTime(event.startDatetime.toString())} - {formatTime(event.endDatetime.toString())}
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <CalendarIcon className="w-4 h-4 mr-1" />
+                            <span>
+                              {formatDate(event.startDatetime.toString())}
+                            </span>
+                          </div>
+                          {event.location && (
+                            <div className="flex items-center">
+                              <MapPin className="w-4 h-4 mr-1" />
+                              <span>{event.location}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2 mt-2">
+                          {event.classType && (
+                            <Badge variant="outline" data-testid={`event-class-type-${event.id}`}>
+                              {event.classType.name}
+                            </Badge>
+                          )}
+                          {event.routine && (
+                            <Badge variant="outline" data-testid={`event-routine-${event.id}`}>
+                              {event.routine.name}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                }
+                {events && events.filter(event => new Date(event.startDatetime) > new Date()).length === 0 && (
+                  <div className="text-center py-8">
+                    <CalendarIcon className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                    <p className="text-gray-500">No upcoming classes scheduled</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-3"
+                      onClick={() => setIsCreateDialogOpen(true)}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Schedule Your First Class
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Mini Calendar */}
         <div>
