@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,8 @@ import {
   FileText,
   ArrowRight,
   ArrowLeft,
-  RotateCcw
+  RotateCcw,
+  Presentation
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -112,6 +113,7 @@ function CoachConsole() {
   const { eventId } = useParams<{ eventId: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [sessionNotes, setSessionNotes] = useState("");
@@ -273,14 +275,24 @@ function CoachConsole() {
           )}
           
           {isSessionActive && (
-            <Button 
-              onClick={handleCompleteSession}
-              disabled={completeSessionMutation.isPending}
-              variant="destructive"
-            >
-              <Square className="w-4 h-4 mr-2" />
-              Complete Class
-            </Button>
+            <>
+              <Button 
+                onClick={() => setLocation(`/presentation/${routine?.id}`)}
+                disabled={!routine?.id}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Presentation className="w-4 h-4 mr-2" />
+                Presentation Mode
+              </Button>
+              <Button 
+                onClick={handleCompleteSession}
+                disabled={completeSessionMutation.isPending}
+                variant="destructive"
+              >
+                <Square className="w-4 h-4 mr-2" />
+                Complete Class
+              </Button>
+            </>
           )}
         </div>
       </div>
