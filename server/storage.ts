@@ -1155,26 +1155,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClientEnrolledEvents(clientId: string): Promise<CalendarEvent[]> {
-    const result = await db
-      .select({
-        id: calendarEvents.id,
-        title: calendarEvents.title,
-        startDatetime: calendarEvents.startDatetime,
-        endDatetime: calendarEvents.endDatetime,
-        location: calendarEvents.location,
-        notes: calendarEvents.notes,
-        classTypeId: calendarEvents.classTypeId,
-        routineId: calendarEvents.routineId,
-        userId: calendarEvents.userId,
-        createdAt: calendarEvents.createdAt,
-        updatedAt: calendarEvents.updatedAt,
-      })
-      .from(calendarEvents)
-      .innerJoin(eventClients, eq(calendarEvents.id, eventClients.eventId))
-      .where(eq(eventClients.clientId, clientId))
-      .orderBy(desc(calendarEvents.startDatetime));
+    // Get event IDs that the client is enrolled in
+    const enrolledEventIds = await db
+      .select({ eventId: eventClients.eventId })
+      .from(eventClients)
+      .where(eq(eventClients.clientId, clientId));
+
+    if (enrolledEventIds.length === 0) {
+      return [];
+    }
+
+    // Get the actual events
+    const eventIds = enrolledEventIds.map(row => row.eventId);
+    const events: CalendarEvent[] = [];
     
-    return result;
+    for (const eventId of eventIds) {
+      const event = await db
+        .select()
+        .from(calendarEvents)
+        .where(eq(calendarEvents.id, eventId))
+        .limit(1);
+      
+      if (event[0]) {
+        events.push(event[0]);
+      }
+    }
+
+    return events.sort((a, b) => new Date(b.startDatetime).getTime() - new Date(a.startDatetime).getTime());
   }
 }
 
