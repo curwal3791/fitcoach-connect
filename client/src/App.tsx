@@ -94,6 +94,7 @@ function Router() {
           <Route path="/programs" component={AuthenticatedApp} />
           <Route path="/calendar" component={AuthenticatedApp} />
           <Route path="/clients" component={AuthenticatedApp} />
+          <Route path="/landing" component={Landing} />
           <Route path="/presentation" component={AuthenticatedApp} />
           <Route path="/presentation/:routineId" component={AuthenticatedApp} />
           <Route path="/coach-console/:eventId" component={CoachConsole} />

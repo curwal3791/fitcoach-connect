@@ -43,7 +43,10 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
           <div className="flex items-center">
             <button 
               className="flex-shrink-0 flex items-center hover:opacity-80 transition-opacity"
-              onClick={() => window.open('/', '_blank')}
+              onClick={() => {
+                // Create a special route for landing page that shows for authenticated users
+                window.location.href = '/landing';
+              }}
               data-testid="button-logo-home"
             >
               <Dumbbell className="text-primary text-xl mr-3" />
