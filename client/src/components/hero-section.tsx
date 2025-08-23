@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import heroImage from "@assets/generated_images/Fitness_instructor_leading_class_25704e11.png"
 
 export function HeroSection() {
   return (
@@ -6,7 +7,7 @@ export function HeroSection() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=2000&q=80')`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('${heroImage}')`,
         }}
       >
         <div className="absolute inset-0 bg-black/40" />
