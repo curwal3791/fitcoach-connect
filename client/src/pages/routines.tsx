@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import RoutineBuilder from "@/components/routine-builder";
 import ExportRoutine from "@/components/export-routine";
-import { Plus, Printer, Save, Filter, Share2 } from "lucide-react";
+import { Plus, Save, Filter, Share2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { 
@@ -48,7 +48,6 @@ export default function Routines() {
   const [routineName, setRoutineName] = useState("New Routine");
   const [routineClassType, setRoutineClassType] = useState<string>("");
   const [filterClassType, setFilterClassType] = useState<string>("all");
-  const [openExportModal, setOpenExportModal] = useState(false);
 
   // Check for stored routine ID from navigation
   useEffect(() => {
@@ -367,22 +366,7 @@ export default function Routines() {
               routineName={routineName}
             />
           )}
-          {selectedRoutineId && (
-            <Button 
-              variant="outline"
-              onClick={() => {
-                // Trigger the export modal
-                const exportButton = document.querySelector('[data-testid="export-routine-trigger"]') as HTMLButtonElement;
-                if (exportButton) {
-                  exportButton.click();
-                }
-              }}
-              data-testid="button-print-preview"
-            >
-              <Printer className="w-4 h-4 mr-2" />
-              Print/Export
-            </Button>
-          )}
+
           <Button 
             onClick={handleSaveRoutine}
             disabled={!selectedRoutineId}
