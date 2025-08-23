@@ -532,7 +532,7 @@ export default function Clients() {
 
 // Progress Tab Component
 function ProgressTab({ clientId }: { clientId: string }) {
-  const [selectedExercise, setSelectedExercise] = useState<string>("");
+  const [selectedExercise, setSelectedExercise] = useState<string>("all");
   const { data: progress = [], isLoading } = useQuery({
     queryKey: ["/api/progress-metrics/client", clientId],
   });
@@ -583,7 +583,7 @@ function ProgressTab({ clientId }: { clientId: string }) {
     name: ex.name 
   }));
 
-  const filteredProgress = selectedExercise 
+  const filteredProgress = selectedExercise && selectedExercise !== "all"
     ? progress.filter((p: any) => p.exerciseId === selectedExercise)
     : progress;
 
@@ -613,7 +613,7 @@ function ProgressTab({ clientId }: { clientId: string }) {
             <SelectValue placeholder="All exercises" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All exercises</SelectItem>
+            <SelectItem value="all">All exercises</SelectItem>
             {exerciseOptions.map((exercise: any) => (
               <SelectItem key={exercise.id} value={exercise.id}>
                 {exercise.name}
@@ -670,7 +670,7 @@ function ProgressTab({ clientId }: { clientId: string }) {
           <form onSubmit={progressForm.handleSubmit(handleAddProgress)} className="space-y-4">
             <div>
               <Label>Exercise</Label>
-              <Select onValueChange={(value) => progressForm.setValue("exerciseId", value)}>
+              <Select onValueChange={(value) => progressForm.setValue("exerciseId", value)} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Select exercise" />
                 </SelectTrigger>
@@ -687,7 +687,7 @@ function ProgressTab({ clientId }: { clientId: string }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Metric Type</Label>
-                <Select onValueChange={(value) => progressForm.setValue("metricType", value)}>
+                <Select onValueChange={(value) => progressForm.setValue("metricType", value)} defaultValue="weight">
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -702,7 +702,7 @@ function ProgressTab({ clientId }: { clientId: string }) {
               </div>
               <div>
                 <Label>Unit</Label>
-                <Select onValueChange={(value) => progressForm.setValue("unit", value)}>
+                <Select onValueChange={(value) => progressForm.setValue("unit", value)} defaultValue="kg">
                   <SelectTrigger>
                     <SelectValue placeholder="Select unit" />
                   </SelectTrigger>
