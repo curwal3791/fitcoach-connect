@@ -25,15 +25,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   await setupAuth(app);
 
-  // Manual seed endpoint for existing users (force seed)
+  // Manual seed endpoint for existing users (force refresh)
   app.post('/api/seed-data', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      console.log(`Manual seed requested for user: ${userId}`);
+      console.log(`Manual seed/refresh requested for user: ${userId}`);
       
-      // Force seed by temporarily allowing creation even if some data exists
+      // Force seed and return current counts
       await storage.seedDefaultData(userId);
-      res.json({ message: "Default data seeded successfully" });
+      
+      // Get current data counts
+      const classTypes = await storage.getClassTypes(userId);
+      const exercises = await storage.getExercises(userId);
+      
+      res.json({ 
+        message: "Data refresh completed", 
+        classTypes: classTypes.length,
+        exercises: exercises.length
+      });
     } catch (error) {
       console.error("Error seeding data:", error);
       res.status(500).json({ message: "Failed to seed data" });

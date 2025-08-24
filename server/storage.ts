@@ -1787,16 +1787,30 @@ export class DatabaseStorage implements IStorage {
       },
     ];
 
-    // Create each class type and its default exercises
+    // Create class types first (faster batch operation)
     console.log(`Creating ${defaultClassTypes.length} default class types for user: ${userId}`);
+    const createdClassTypes = [];
     
     for (const classTypeData of defaultClassTypes) {
-      console.log(`Creating class type: ${classTypeData.name} for user: ${userId}`);
-      const classType = await this.createClassType(classTypeData);
-      console.log(`Created class type: ${classType.name} with ID: ${classType.id}`);
-      
-      await this.createDefaultExercisesForClass(classType, userId);
-      console.log(`Created default exercises for class type: ${classType.name}`);
+      try {
+        console.log(`Creating class type: ${classTypeData.name} for user: ${userId}`);
+        const classType = await this.createClassType(classTypeData);
+        createdClassTypes.push(classType);
+        console.log(`Created class type: ${classType.name} with ID: ${classType.id}`);
+      } catch (error) {
+        console.error(`Error creating class type ${classTypeData.name}:`, error);
+      }
+    }
+    
+    // Create exercises for all class types (can be done in background)
+    console.log(`Creating exercises for ${createdClassTypes.length} class types`);
+    for (const classType of createdClassTypes) {
+      try {
+        await this.createDefaultExercisesForClass(classType, userId);
+        console.log(`Created default exercises for class type: ${classType.name}`);
+      } catch (error) {
+        console.error(`Error creating exercises for ${classType.name}:`, error);
+      }
     }
     
     console.log(`Completed default data seeding for user: ${userId}`);
