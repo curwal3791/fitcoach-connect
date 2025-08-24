@@ -2,9 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./emailAuth";
-import { db } from "./db";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
 import {
   insertClassTypeSchema,
   insertExerciseSchema,
@@ -20,9 +18,7 @@ import {
   insertProgramEnrollmentSchema,
   insertEventTargetSchema,
   insertReadinessCheckSchema,
-  insertPerformanceRecordSchema,
-  exercises,
-  classTypes
+  insertPerformanceRecordSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
