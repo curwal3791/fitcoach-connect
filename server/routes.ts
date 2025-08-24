@@ -1113,21 +1113,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? process.env.DATABASE_URL.replace(/:[^:@]*@/, ':***@')
         : 'NOT_SET';
       
-      // Direct database query bypassing storage layer
-      const directExercises = await db.select().from(exercises).where(eq(exercises.createdByUserId, userId));
-      const directClassTypes = await db.select().from(classTypes).where(eq(classTypes.createdByUserId, userId));
-      const reachExercises = directExercises.filter(ex => ex.name.toLowerCase().includes('reach'));
-      const orphanedExercises = directExercises.filter(ex => !ex.classTypeId);
+      // Use storage layer instead of direct database access
+      const allExercises = await storage.getExercises(userId);
+      const allClassTypes = await storage.getClassTypes(userId);
+      const reachExercises = allExercises.filter(ex => ex.name.toLowerCase().includes('reach'));
+      const orphanedExercises = allExercises.filter(ex => !ex.classTypeId);
       
       // Count exercises per class type
-      const exercisesByClass = directClassTypes.map(ct => ({
+      const exercisesByClass = allClassTypes.map(ct => ({
         className: ct.name,
-        exerciseCount: directExercises.filter(ex => ex.classTypeId === ct.id).length
+        exerciseCount: allExercises.filter(ex => ex.classTypeId === ct.id).length
       }));
       
       console.log('[DB DIAGNOSTIC] Database results:', {
-        totalExercises: directExercises.length,
-        totalClassTypes: directClassTypes.length,
+        totalExercises: allExercises.length,
+        totalClassTypes: allClassTypes.length,
         reachCount: reachExercises.length,
         orphanedCount: orphanedExercises.length
       });
@@ -1139,19 +1139,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: userId,
         databaseConnected: true,
         queryResults: {
-          totalExercises: directExercises.length,
-          totalClassTypes: directClassTypes.length,
+          totalExercises: allExercises.length,
+          totalClassTypes: allClassTypes.length,
           exercisesByClass,
           reachExercises: reachExercises.map(ex => ({ id: ex.id.slice(0, 8), name: ex.name })),
           orphanedExercises: orphanedExercises.length,
-          sampleExercises: directExercises.slice(0, 5).map(ex => ({ 
+          sampleExercises: allExercises.slice(0, 5).map(ex => ({ 
             id: ex.id.slice(0, 8), 
             name: ex.name, 
             classTypeId: ex.classTypeId?.slice(0, 8) || null 
           }))
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('[DB DIAGNOSTIC] Error:', error);
       res.status(500).json({ 
         error: error.message, 
