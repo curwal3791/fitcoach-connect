@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dumbbell, Bell, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import GlobalSearch from "@/components/global-search";
 
 interface NavigationProps {
@@ -31,6 +34,27 @@ const navigation = [
 export default function Navigation({ currentTab, onTabChange }: NavigationProps) {
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    mutationFn: () => apiRequest('/api/auth/logout', { method: 'POST' }),
+    onSuccess: () => {
+      localStorage.removeItem('auth_token');
+      queryClient.clear();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      window.location.href = '/';
+    },
+    onError: () => {
+      // Clear local data even if API call fails
+      localStorage.removeItem('auth_token');
+      queryClient.clear();
+      window.location.href = '/';
+    },
+  });
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase() || 'U';
@@ -104,11 +128,13 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
 
-                <DropdownMenuItem asChild>
-                  <a href="/api/logout" className="w-full flex items-center" data-testid="link-logout">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </a>
+                <DropdownMenuItem 
+                  className="w-full flex items-center cursor-pointer"
+                  onClick={() => logoutMutation.mutate()}
+                  data-testid="button-logout"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -1706,11 +1706,17 @@ export class DatabaseStorage implements IStorage {
 
   // Data seeding operations
   async seedDefaultData(userId: string): Promise<void> {
-    // Check if user already has class types to avoid duplicate seeding
-    const existingClassTypes = await this.getClassTypes(userId);
-    if (existingClassTypes.length > 0) {
-      return; // Already seeded
-    }
+    try {
+      console.log(`Starting default data seeding for user: ${userId}`);
+      
+      // Check if user already has class types to avoid duplicate seeding
+      const existingClassTypes = await this.getClassTypes(userId);
+      console.log(`Found ${existingClassTypes.length} existing class types for user: ${userId}`);
+      
+      if (existingClassTypes.length > 0) {
+        console.log(`User ${userId} already has class types, skipping seeding`);
+        return; // Already seeded
+      }
 
     // Define the top 10 popular class types
     const defaultClassTypes = [
@@ -1777,9 +1783,21 @@ export class DatabaseStorage implements IStorage {
     ];
 
     // Create each class type and its default exercises
+    console.log(`Creating ${defaultClassTypes.length} default class types for user: ${userId}`);
+    
     for (const classTypeData of defaultClassTypes) {
+      console.log(`Creating class type: ${classTypeData.name} for user: ${userId}`);
       const classType = await this.createClassType(classTypeData);
+      console.log(`Created class type: ${classType.name} with ID: ${classType.id}`);
+      
       await this.createDefaultExercisesForClass(classType, userId);
+      console.log(`Created default exercises for class type: ${classType.name}`);
+    }
+    
+    console.log(`Completed default data seeding for user: ${userId}`);
+    } catch (error) {
+      console.error(`Error in seedDefaultData for user ${userId}:`, error);
+      throw error;
     }
   }
 }

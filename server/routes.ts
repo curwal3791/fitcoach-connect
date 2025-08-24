@@ -44,7 +44,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = req.user;
       
       // Seed default data for new users (non-blocking)
-      storage.seedDefaultData(user.id).catch(error => {
+      console.log(`Checking/seeding default data for user: ${user.id}`);
+      storage.seedDefaultData(user.id).then(() => {
+        console.log(`Default data seeding completed for user: ${user.id}`);
+      }).catch(error => {
         console.error("Error seeding default data:", error);
       });
       
