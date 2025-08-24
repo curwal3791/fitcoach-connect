@@ -1096,11 +1096,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Emergency debug endpoint - force production to reveal what it sees
-  app.get('/api/emergency-debug', isAuthenticated, async (req: any, res) => {
+  // Database diagnostic endpoint - shows exactly what database we're connected to
+  app.get('/api/db-diagnostic', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      console.log('[EMERGENCY DEBUG] User ID:', userId);
+      console.log('[DB DIAGNOSTIC] User ID:', userId);
+      console.log('[DB DIAGNOSTIC] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+      console.log('[DB DIAGNOSTIC] Environment:', process.env.NODE_ENV || 'unknown');
+      
+      // Get database connection info (safely)
+      const dbUrlMasked = process.env.DATABASE_URL 
+        ? process.env.DATABASE_URL.replace(/:[^:@]*@/, ':***@')
+        : 'NOT_SET';
       
       // Direct database query bypassing storage layer
       const directExercises = await db.select().from(exercises).where(eq(exercises.createdByUserId, userId));
@@ -1108,7 +1115,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reachExercises = directExercises.filter(ex => ex.name.toLowerCase().includes('reach'));
       const orphanedExercises = directExercises.filter(ex => !ex.classTypeId);
       
-      console.log('[EMERGENCY DEBUG] Direct query results:', {
+      // Count exercises per class type
+      const exercisesByClass = directClassTypes.map(ct => ({
+        className: ct.name,
+        exerciseCount: directExercises.filter(ex => ex.classTypeId === ct.id).length
+      }));
+      
+      console.log('[DB DIAGNOSTIC] Database results:', {
         totalExercises: directExercises.length,
         totalClassTypes: directClassTypes.length,
         reachCount: reachExercises.length,
@@ -1118,14 +1131,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'unknown',
+        databaseUrl: dbUrlMasked,
         userId: userId,
         databaseConnected: true,
-        directQueryResults: {
+        queryResults: {
           totalExercises: directExercises.length,
           totalClassTypes: directClassTypes.length,
+          exercisesByClass,
           reachExercises: reachExercises.map(ex => ({ id: ex.id.slice(0, 8), name: ex.name })),
           orphanedExercises: orphanedExercises.length,
-          firstFewExercises: directExercises.slice(0, 5).map(ex => ({ 
+          sampleExercises: directExercises.slice(0, 5).map(ex => ({ 
             id: ex.id.slice(0, 8), 
             name: ex.name, 
             classTypeId: ex.classTypeId?.slice(0, 8) || null 
@@ -1133,8 +1148,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error('[EMERGENCY DEBUG] Error:', error);
-      res.status(500).json({ error: error.message, timestamp: new Date().toISOString() });
+      console.error('[DB DIAGNOSTIC] Error:', error);
+      res.status(500).json({ 
+        error: error.message, 
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'unknown',
+        databaseUrl: process.env.DATABASE_URL ? 'SET_BUT_ERROR' : 'NOT_SET'
+      });
     }
   });
 
