@@ -70,9 +70,9 @@ export default function Exercises() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  // Fetch exercises with filters
+  // Fetch exercises with filters (with cache busting for production)
   const { data: exercises, isLoading: exercisesLoading } = useQuery({
-    queryKey: ["/api/exercises", filters],
+    queryKey: ["/api/exercises", filters, Date.now()], // Add timestamp to force fresh data
     enabled: isAuthenticated,
     queryFn: () => {
       const params = new URLSearchParams();

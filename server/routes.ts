@@ -130,7 +130,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/class-types', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
+      console.log(`Fetching class types for user: ${userId}`);
+      
+      // Add cache-busting headers for production
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
       const classTypes = await storage.getClassTypes(userId);
+      console.log(`Found ${classTypes.length} class types for user: ${userId}`);
+      
       res.json(classTypes);
     } catch (error) {
       console.error("Error fetching class types:", error);
@@ -180,11 +191,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Exercises routes
+  // Exercises routes with cache busting
   app.get('/api/exercises', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const { search, category, difficulty, equipment, classType } = req.query;
+      
+      console.log(`Fetching exercises for user: ${userId}, filters:`, { search, category, difficulty, equipment, classType });
+      
+      // Add cache-busting headers for production
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
       const exercises = await storage.getExercises({
         search: search as string,
         category: category as string,
@@ -193,6 +214,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         classType: classType as string,
         userId,
       });
+      
+      console.log(`Found ${exercises.length} exercises for user: ${userId}`);
       res.json(exercises);
     } catch (error) {
       console.error("Error fetching exercises:", error);
