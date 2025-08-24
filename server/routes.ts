@@ -25,11 +25,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   await setupAuth(app);
 
+  // Manual seed endpoint for existing users
+  app.post('/api/seed-data', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      await storage.seedDefaultData(userId);
+      res.json({ message: "Default data seeded successfully" });
+    } catch (error) {
+      console.error("Error seeding data:", error);
+      res.status(500).json({ message: "Failed to seed data" });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       // req.user is already the full user object from our auth middleware
       const user = req.user;
+      
+      // Seed default data for new users (non-blocking)
+      storage.seedDefaultData(user.id).catch(error => {
+        console.error("Error seeding default data:", error);
+      });
+      
       res.json({
         id: user.id,
         email: user.email,

@@ -203,6 +203,9 @@ export interface IStorage {
   getPerformanceRecords(eventId: string, clientId?: string): Promise<(PerformanceRecord & { exercise: Exercise })[]>;
   createPerformanceRecord(record: InsertPerformanceRecord): Promise<PerformanceRecord>;
   applyProgression(eventId: string): Promise<any>;
+
+  // Data seeding operations
+  seedDefaultData(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1699,6 +1702,85 @@ export class DatabaseStorage implements IStorage {
     }
 
     return { message: "Progression applied successfully" };
+  }
+
+  // Data seeding operations
+  async seedDefaultData(userId: string): Promise<void> {
+    // Check if user already has class types to avoid duplicate seeding
+    const existingClassTypes = await this.getClassTypes(userId);
+    if (existingClassTypes.length > 0) {
+      return; // Already seeded
+    }
+
+    // Define the top 10 popular class types
+    const defaultClassTypes = [
+      {
+        name: "Yoga",
+        description: "A mind-body practice combining physical postures, breathing techniques, and meditation to improve flexibility, strength, and mental well-being.",
+        isDefault: true,
+        createdByUserId: userId,
+      },
+      {
+        name: "Zumba",
+        description: "High-energy dance fitness class combining Latin rhythms with easy-to-follow dance moves for a fun, effective cardio workout.",
+        isDefault: true,
+        createdByUserId: userId,
+      },
+      {
+        name: "HIIT",
+        description: "High-Intensity Interval Training featuring short bursts of intense exercise followed by recovery periods for maximum calorie burn.",
+        isDefault: true,
+        createdByUserId: userId,
+      },
+      {
+        name: "Pilates",
+        description: "Low-impact exercise focusing on core strength, flexibility, and body alignment through controlled movements and breathing.",
+        isDefault: true,
+        createdByUserId: userId,
+      },
+      {
+        name: "CrossFit",
+        description: "Varied functional movements performed at high intensity to improve overall fitness, strength, and conditioning.",
+        isDefault: true,
+        createdByUserId: userId,
+      },
+      {
+        name: "Barre",
+        description: "Ballet-inspired workout combining isometric movements, stretching, and strengthening exercises for lean muscle development.",
+        isDefault: true,
+        createdByUserId: userId,
+      },
+      {
+        name: "Spinning",
+        description: "Indoor cycling class with motivating music and varying intensity levels for cardiovascular fitness and endurance.",
+        isDefault: true,
+        createdByUserId: userId,
+      },
+      {
+        name: "Kickboxing",
+        description: "Martial arts-inspired cardio workout combining punches, kicks, and defensive moves for strength and stress relief.",
+        isDefault: true,
+        createdByUserId: userId,
+      },
+      {
+        name: "Strength Training",
+        description: "Resistance-based exercises using weights and equipment to build muscle mass, bone density, and metabolic health.",
+        isDefault: true,
+        createdByUserId: userId,
+      },
+      {
+        name: "Aqua Fitness",
+        description: "Water-based exercise program providing low-impact cardiovascular and strength training with joint-friendly resistance.",
+        isDefault: true,
+        createdByUserId: userId,
+      },
+    ];
+
+    // Create each class type and its default exercises
+    for (const classTypeData of defaultClassTypes) {
+      const classType = await this.createClassType(classTypeData);
+      await this.createDefaultExercisesForClass(classType, userId);
+    }
   }
 }
 
