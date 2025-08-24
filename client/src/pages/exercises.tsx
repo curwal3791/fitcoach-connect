@@ -70,12 +70,14 @@ export default function Exercises() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  // Fetch exercises with filters
+  // Fetch exercises with filters - force fresh data for production
   const { data: exercises, isLoading: exercisesLoading, refetch: refetchExercises } = useQuery({
     queryKey: ["/api/exercises", filters],
     enabled: isAuthenticated,
-    staleTime: 0, // Always refetch for fresh data
-    cacheTime: 0, // Don't cache responses
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+    gcTime: 0,
     queryFn: () => {
       const params = new URLSearchParams();
       if (filters.search) params.append("search", filters.search);
@@ -88,10 +90,14 @@ export default function Exercises() {
     },
   });
 
-  // Fetch class types for the dropdown
+  // Fetch class types for the dropdown - force fresh data
   const { data: classTypes = [] } = useQuery<ClassType[]>({
     queryKey: ["/api/class-types"],
     enabled: isAuthenticated,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const form = useForm<ExerciseFormData>({
@@ -117,7 +123,7 @@ export default function Exercises() {
         ...data,
         classTypeId: data.classTypeId === "none" ? null : data.classTypeId
       };
-      const response = await apiRequest("POST", "/api/exercises", processedData);
+      const response = await apiRequest("/api/exercises", { method: "POST", body: JSON.stringify(processedData), headers: { "Content-Type": "application/json" } });
       return response.json();
     },
     onSuccess: () => {
@@ -155,7 +161,7 @@ export default function Exercises() {
         ...data,
         classTypeId: data.classTypeId === "none" ? null : data.classTypeId
       };
-      const response = await apiRequest("PUT", `/api/exercises/${id}`, processedData);
+      const response = await apiRequest(`/api/exercises/${id}`, { method: "PUT", body: JSON.stringify(processedData), headers: { "Content-Type": "application/json" } });
       return response.json();
     },
     onSuccess: () => {
