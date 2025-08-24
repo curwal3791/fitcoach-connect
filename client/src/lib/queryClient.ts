@@ -10,8 +10,16 @@ async function throwIfResNotOk(res: Response) {
 export async function apiRequest(url: string, options?: RequestInit): Promise<any> {
   const token = localStorage.getItem('auth_token');
   
+  // Ultra-aggressive cache busting for production
+  const cacheKillerUrl = url.includes('?') 
+    ? `${url}&_cb=${Date.now()}&_r=${Math.random()}` 
+    : `${url}?_cb=${Date.now()}&_r=${Math.random()}`;
+  
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
     ...((options?.headers as Record<string, string>) || {}),
   };
   
@@ -19,7 +27,7 @@ export async function apiRequest(url: string, options?: RequestInit): Promise<an
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, {
+  const res = await fetch(cacheKillerUrl, {
     credentials: 'include',
     ...options,
     headers,
@@ -83,10 +91,11 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "returnNull" }),
       refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: true, // Force refetch on focus
+      staleTime: 0, // Always consider data stale
+      gcTime: 0, // Don't cache anything
       retry: false,
-      refetchOnMount: false,
+      refetchOnMount: true, // Always refetch on mount
     },
     mutations: {
       retry: false,

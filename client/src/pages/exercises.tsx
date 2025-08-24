@@ -85,8 +85,15 @@ export default function Exercises() {
       if (filters.difficulty !== "all") params.append("difficulty", filters.difficulty);
       if (filters.equipment !== "all") params.append("equipment", filters.equipment);
       if (filters.classType !== "all") params.append("classType", filters.classType);
+      // Force cache-busting for production
+      params.append("_t", Date.now().toString());
       
-      return fetch(`/api/exercises?${params.toString()}`).then(res => res.json());
+      return fetch(`/api/exercises?${params.toString()}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      }).then(res => res.json());
     },
   });
 
