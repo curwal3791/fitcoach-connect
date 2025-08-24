@@ -16,7 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Users, Calendar, Dumbbell, Zap, ArrowLeft, Clock, Activity, ChevronRight } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Edit, Trash2, Users, Calendar, Dumbbell, Zap, ArrowLeft, Clock, Activity, ChevronRight, Search, Filter, SortAsc, SortDesc } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertClassTypeSchema, type ClassType, type InsertClassType, type Routine } from "@shared/schema";
@@ -39,6 +40,9 @@ export default function Classes() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassType | null>(null);
   const [selectedClass, setSelectedClass] = useState<ClassType | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
 
   const form = useForm<ClassTypeFormData>({
@@ -56,6 +60,28 @@ export default function Classes() {
     queryKey: ["/api/class-types"],
     retry: false,
   });
+
+  // Filter and sort class types
+  const filteredAndSortedClassTypes = classTypes
+    .filter((classType) => {
+      if (!searchQuery) return true;
+      return (
+        classType.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (classType.description && classType.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === "name") {
+        comparison = a.name.localeCompare(b.name);
+      } else if (sortBy === "created") {
+        comparison = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+      } else if (sortBy === "type") {
+        // Sort by default status (default classes first)
+        comparison = (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0);
+      }
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
 
   // Fetch routines for selected class
   const { data: classRoutines = [], isLoading: routinesLoading } = useQuery<(Routine & { exerciseCount: number })[]>({
@@ -436,8 +462,70 @@ export default function Classes() {
         </Dialog>
       </div>
 
+      {/* Search and Filter Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search class types..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+            data-testid="input-search-classes"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[140px]" data-testid="select-sort-by">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="created">Date Created</SelectItem>
+              <SelectItem value="type">Type</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+            data-testid="button-sort-order"
+          >
+            {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Results Count */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-muted-foreground" data-testid="text-results-count">
+          {searchQuery ? `${filteredAndSortedClassTypes.length} of ${classTypes.length} class types` : `${classTypes.length} class types`}
+        </p>
+      </div>
+
       {/* Class Types Grid */}
-      {classTypes.length === 0 ? (
+      {filteredAndSortedClassTypes.length === 0 && searchQuery ? (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Search className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2" data-testid="text-no-results-title">
+              No Classes Found
+            </h3>
+            <p className="text-muted-foreground text-center max-w-sm mb-4" data-testid="text-no-results-description">
+              No class types match your search "{searchQuery}". Try adjusting your search terms.
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => setSearchQuery("")}
+              data-testid="button-clear-search"
+            >
+              Clear Search
+            </Button>
+          </CardContent>
+        </Card>
+      ) : classTypes.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -457,7 +545,7 @@ export default function Classes() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {classTypes.map((classType: ClassType) => (
+          {filteredAndSortedClassTypes.map((classType: ClassType) => (
             <Card key={classType.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedClass(classType)} data-testid={`card-class-${classType.id}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
