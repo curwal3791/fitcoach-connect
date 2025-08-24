@@ -1096,64 +1096,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Database diagnostic endpoint - shows exactly what database we're connected to
-  app.get('/api/db-diagnostic', isAuthenticated, async (req: any, res) => {
+  // Simple fix: Use reseed endpoint to populate production with correct exercises
+  app.post('/api/fix-exercises', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      console.log('[DB DIAGNOSTIC] User ID:', userId);
-      console.log('[DB DIAGNOSTIC] DATABASE_URL exists:', !!process.env.DATABASE_URL);
-      console.log('[DB DIAGNOSTIC] Environment:', process.env.NODE_ENV || 'unknown');
+      console.log('[FIX] Fixing exercises for user:', userId);
       
-      // Get database connection info (safely)
-      const dbUrlMasked = process.env.DATABASE_URL 
-        ? process.env.DATABASE_URL.replace(/:[^:@]*@/, ':***@')
-        : 'NOT_SET';
+      // Import and run the seeder
+      const { seedExercises } = await import('./seed-exercises');
+      const totalCreated = await seedExercises(userId);
       
-      // Use storage layer instead of direct database access
+      // Get current counts after seeding
       const allExercises = await storage.getExercises(userId);
       const allClassTypes = await storage.getClassTypes(userId);
-      const reachExercises = allExercises.filter(ex => ex.name.toLowerCase().includes('reach'));
-      const orphanedExercises = allExercises.filter(ex => !ex.classTypeId);
       
-      // Count exercises per class type
-      const exercisesByClass = allClassTypes.map(ct => ({
-        className: ct.name,
-        exerciseCount: allExercises.filter(ex => ex.classTypeId === ct.id).length
-      }));
-      
-      console.log('[DB DIAGNOSTIC] Database results:', {
-        totalExercises: allExercises.length,
-        totalClassTypes: allClassTypes.length,
-        reachCount: reachExercises.length,
-        orphanedCount: orphanedExercises.length
-      });
+      console.log('[FIX] Fix completed. Total exercises:', allExercises.length);
       
       res.json({
+        success: true,
+        message: `Exercise fix completed! Created ${totalCreated} exercises.`,
+        totalExercises: allExercises.length,
+        totalClassTypes: allClassTypes.length,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'unknown',
-        databaseUrl: dbUrlMasked,
-        userId: userId,
-        databaseConnected: true,
-        queryResults: {
-          totalExercises: allExercises.length,
-          totalClassTypes: allClassTypes.length,
-          exercisesByClass,
-          reachExercises: reachExercises.map(ex => ({ id: ex.id.slice(0, 8), name: ex.name })),
-          orphanedExercises: orphanedExercises.length,
-          sampleExercises: allExercises.slice(0, 5).map(ex => ({ 
-            id: ex.id.slice(0, 8), 
-            name: ex.name, 
-            classTypeId: ex.classTypeId?.slice(0, 8) || null 
-          }))
-        }
+        environment: process.env.NODE_ENV || 'production'
       });
     } catch (error: any) {
-      console.error('[DB DIAGNOSTIC] Error:', error);
+      console.error('[FIX] Error:', error);
       res.status(500).json({ 
+        success: false,
         error: error.message, 
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'unknown',
-        databaseUrl: process.env.DATABASE_URL ? 'SET_BUT_ERROR' : 'NOT_SET'
+        timestamp: new Date().toISOString()
       });
     }
   });
