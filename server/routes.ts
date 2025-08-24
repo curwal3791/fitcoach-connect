@@ -191,13 +191,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Exercises routes with cache busting
+  // Exercises routes with detailed debugging
   app.get('/api/exercises', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const { search, category, difficulty, equipment, classType } = req.query;
       
-      console.log(`Fetching exercises for user: ${userId}, filters:`, { search, category, difficulty, equipment, classType });
+      console.log(`[DEBUG] Fetching exercises for user: ${userId}, filters:`, { search, category, difficulty, equipment, classType });
+      console.log(`[DEBUG] Database URL exists: ${!!process.env.DATABASE_URL}`);
+      console.log(`[DEBUG] Environment: ${process.env.NODE_ENV}`);
       
       // Add cache-busting headers for production
       res.set({
@@ -215,7 +217,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
       });
       
-      console.log(`Found ${exercises.length} exercises for user: ${userId}`);
+      // Debug first few exercises
+      console.log(`[DEBUG] Found ${exercises.length} exercises for user: ${userId}`);
+      console.log(`[DEBUG] First 3 exercises:`, exercises.slice(0, 3).map(ex => ({ id: ex.id.slice(0, 8), name: ex.name, classTypeId: ex.classTypeId?.slice(0, 8) })));
+      console.log(`[DEBUG] Any 'Reach' exercises:`, exercises.filter(ex => ex.name.toLowerCase().includes('reach')).length);
+      
       res.json(exercises);
     } catch (error) {
       console.error("Error fetching exercises:", error);
@@ -1087,6 +1093,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error applying progression:", error);
       res.status(500).json({ message: "Failed to apply progression", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Emergency debug endpoint - force production to reveal what it sees
+  app.get('/api/emergency-debug', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      console.log('[EMERGENCY DEBUG] User ID:', userId);
+      
+      // Direct database query bypassing storage layer
+      const directExercises = await db.select().from(exercises).where(eq(exercises.createdByUserId, userId));
+      const directClassTypes = await db.select().from(classTypes).where(eq(classTypes.createdByUserId, userId));
+      const reachExercises = directExercises.filter(ex => ex.name.toLowerCase().includes('reach'));
+      const orphanedExercises = directExercises.filter(ex => !ex.classTypeId);
+      
+      console.log('[EMERGENCY DEBUG] Direct query results:', {
+        totalExercises: directExercises.length,
+        totalClassTypes: directClassTypes.length,
+        reachCount: reachExercises.length,
+        orphanedCount: orphanedExercises.length
+      });
+      
+      res.json({
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'unknown',
+        userId: userId,
+        databaseConnected: true,
+        directQueryResults: {
+          totalExercises: directExercises.length,
+          totalClassTypes: directClassTypes.length,
+          reachExercises: reachExercises.map(ex => ({ id: ex.id.slice(0, 8), name: ex.name })),
+          orphanedExercises: orphanedExercises.length,
+          firstFewExercises: directExercises.slice(0, 5).map(ex => ({ 
+            id: ex.id.slice(0, 8), 
+            name: ex.name, 
+            classTypeId: ex.classTypeId?.slice(0, 8) || null 
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('[EMERGENCY DEBUG] Error:', error);
+      res.status(500).json({ error: error.message, timestamp: new Date().toISOString() });
     }
   });
 
