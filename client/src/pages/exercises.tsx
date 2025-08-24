@@ -54,6 +54,7 @@ export default function Exercises() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [isFixing, setIsFixing] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -234,6 +235,46 @@ export default function Exercises() {
     },
   });
 
+  // Fix exercises mutation for production
+  const fixExercisesMutation = useMutation({
+    mutationFn: () => apiRequest("/api/fix-exercises", {
+      method: "POST",
+    }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      setIsFixing(false);
+      toast({
+        title: "Success",
+        description: data.message || "Exercises fixed successfully!",
+      });
+    },
+    onError: (error) => {
+      setIsFixing(false);
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to fix exercises",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFixExercises = () => {
+    setIsFixing(true);
+    fixExercisesMutation.mutate();
+  };
+
   const onSubmit = (data: ExerciseFormData) => {
     if (selectedExercise) {
       updateExerciseMutation.mutate({ id: selectedExercise.id, data });
@@ -298,13 +339,25 @@ export default function Exercises() {
             <h1 className="text-3xl font-bold text-gray-900">Exercise Database</h1>
             <p className="text-gray-600 mt-1">Browse and manage your exercise library</p>
           </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90" data-testid="button-add-exercise">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Exercise
+          <div className="flex gap-2">
+            {exercises && exercises.length < 50 && (
+              <Button 
+                onClick={handleFixExercises}
+                disabled={isFixing}
+                variant="outline"
+                className="bg-orange-50 border-orange-200 hover:bg-orange-100 text-orange-700"
+                data-testid="button-fix-exercises"
+              >
+                {isFixing ? "Fixing..." : "Fix Missing Exercises"}
               </Button>
-            </DialogTrigger>
+            )}
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary hover:bg-primary/90" data-testid="button-add-exercise">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Exercise
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Create New Exercise</DialogTitle>
