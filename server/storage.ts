@@ -206,6 +206,7 @@ export interface IStorage {
 
   // Data seeding operations
   seedDefaultData(userId: string): Promise<void>;
+  getAllUsers(): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1713,9 +1714,13 @@ export class DatabaseStorage implements IStorage {
       const existingClassTypes = await this.getClassTypes(userId);
       console.log(`Found ${existingClassTypes.length} existing class types for user: ${userId}`);
       
+      if (existingClassTypes.length >= 10) {
+        console.log(`User ${userId} already has ${existingClassTypes.length} class types, skipping seeding`);
+        return; // Already seeded with complete set
+      }
+      
       if (existingClassTypes.length > 0) {
-        console.log(`User ${userId} already has class types, skipping seeding`);
-        return; // Already seeded
+        console.log(`User ${userId} has ${existingClassTypes.length} class types but missing defaults, will add missing ones`);
       }
 
     // Define the top 10 popular class types
@@ -1799,6 +1804,11 @@ export class DatabaseStorage implements IStorage {
       console.error(`Error in seedDefaultData for user ${userId}:`, error);
       throw error;
     }
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const allUsers = await db.select().from(users);
+    return allUsers;
   }
 }
 

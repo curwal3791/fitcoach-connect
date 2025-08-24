@@ -25,15 +25,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   await setupAuth(app);
 
-  // Manual seed endpoint for existing users
+  // Manual seed endpoint for existing users (force seed)
   app.post('/api/seed-data', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
+      console.log(`Manual seed requested for user: ${userId}`);
+      
+      // Force seed by temporarily allowing creation even if some data exists
       await storage.seedDefaultData(userId);
       res.json({ message: "Default data seeded successfully" });
     } catch (error) {
       console.error("Error seeding data:", error);
       res.status(500).json({ message: "Failed to seed data" });
+    }
+  });
+
+  // Emergency seed endpoint for production (admin use)
+  app.post('/api/force-seed-all', async (req, res) => {
+    try {
+      // This endpoint can be called without auth for production setup
+      console.log("Force seeding all default data...");
+      
+      // Get all users and seed them
+      const allUsers = await storage.getAllUsers();
+      console.log(`Found ${allUsers.length} users to seed`);
+      
+      for (const user of allUsers) {
+        try {
+          console.log(`Force seeding for user: ${user.id}`);
+          await storage.seedDefaultData(user.id);
+        } catch (error) {
+          console.error(`Failed to seed user ${user.id}:`, error);
+        }
+      }
+      
+      res.json({ message: `Seeded ${allUsers.length} users successfully` });
+    } catch (error) {
+      console.error("Error in force seed:", error);
+      res.status(500).json({ message: "Failed to force seed" });
     }
   });
 

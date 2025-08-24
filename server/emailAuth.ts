@@ -119,6 +119,15 @@ export async function setupAuth(app: Express) {
         emailVerified: true, // For demo purposes, skip email verification
       });
 
+      // Seed default data for new user (critical for production)
+      console.log(`Seeding default data for new user: ${user.id}`);
+      try {
+        await storage.seedDefaultData(user.id);
+        console.log(`Successfully seeded default data for new user: ${user.id}`);
+      } catch (error) {
+        console.error(`Failed to seed default data for new user ${user.id}:`, error);
+      }
+
       // Create session
       (req.session as any).userId = user.id;
       
@@ -163,6 +172,14 @@ export async function setupAuth(app: Express) {
 
       // Create session
       (req.session as any).userId = user.id;
+      
+      // Seed default data for existing users (non-blocking, critical for production)
+      console.log(`Checking/seeding default data for existing user: ${user.id}`);
+      storage.seedDefaultData(user.id).then(() => {
+        console.log(`Default data seeding check completed for user: ${user.id}`);
+      }).catch(error => {
+        console.error(`Error seeding default data for user ${user.id}:`, error);
+      });
       
       // Generate JWT token
       const token = generateToken(user.id);
