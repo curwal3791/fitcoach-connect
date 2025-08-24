@@ -136,8 +136,9 @@ function Calendar() {
     const selectedClassType = classTypes?.find(ct => ct.id === formData.classTypeId);
     const selectedRoutine = routines?.find(r => r.id === formData.routineId);
     
-    // Create start datetime from form fields
-    const startDate = new Date(formData.eventDate);
+    // Create start datetime from form fields - avoid timezone issues
+    const [year, month, day] = formData.eventDate.split('-').map(Number);
+    const startDate = new Date(year, month - 1, day); // month is 0-indexed
     startDate.setHours(parseInt(formData.startHour), parseInt(formData.startMinute), 0, 0);
     
     // Create end datetime based on duration

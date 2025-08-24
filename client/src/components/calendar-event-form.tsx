@@ -46,7 +46,7 @@ export function CalendarEventForm({
     defaultValues: {
       classTypeId: "",
       routineId: "none",
-      eventDate: selectedDate.toISOString().split('T')[0],
+      eventDate: `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`,
       startHour: "09",
       startMinute: "00",
       duration: "60",
@@ -65,7 +65,7 @@ export function CalendarEventForm({
       form.reset({
         classTypeId: editingEvent.classTypeId || "",
         routineId: editingEvent.routineId || "none",
-        eventDate: startDate.toISOString().split('T')[0],
+        eventDate: `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`,
         startHour: startDate.getHours().toString().padStart(2, '0'),
         startMinute: startDate.getMinutes().toString().padStart(2, '0'),
         duration: duration.toString(),
@@ -73,7 +73,7 @@ export function CalendarEventForm({
         notes: editingEvent.notes || "",
       });
     } else {
-      form.setValue('eventDate', selectedDate.toISOString().split('T')[0]);
+      form.setValue('eventDate', `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`);
     }
   }, [selectedDate, editingEvent, form]);
 
