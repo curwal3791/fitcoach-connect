@@ -1138,6 +1138,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reseed exercises endpoint
+  app.post('/api/reseed-exercises', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      console.log('[RESEED] Starting exercise reseed for user:', userId);
+      
+      const { seedExercises } = await import('./seed-exercises');
+      const totalCreated = await seedExercises(userId);
+      
+      console.log('[RESEED] Successfully created exercises:', totalCreated);
+      res.json({
+        success: true,
+        message: `Successfully created ${totalCreated} exercises`,
+        totalCreated,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('[RESEED] Error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message, 
+        timestamp: new Date().toISOString() 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
