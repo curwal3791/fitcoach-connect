@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -349,6 +349,9 @@ export default function Exercises() {
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Create New Exercise</DialogTitle>
+                <DialogDescription>
+                  Fill out the details below to create a new exercise for your library.
+                </DialogDescription>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -478,6 +481,84 @@ export default function Exercises() {
                             {...field} 
                             value={field.value || ""}
                             data-testid="input-exercise-equipment"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="primaryMuscles"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Primary Muscles</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g. Chest, Shoulders" 
+                              {...field} 
+                              value={field.value || ""}
+                              data-testid="input-exercise-primary-muscles"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="secondaryMuscles"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Secondary Muscles</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g. Triceps, Core" 
+                              {...field} 
+                              value={field.value || ""}
+                              data-testid="input-exercise-secondary-muscles"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="modifications"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Modifications</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Alternative ways to perform this exercise..." 
+                            {...field} 
+                            value={field.value || ""}
+                            data-testid="input-exercise-modifications"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="safetyNotes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Safety Notes</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Important safety considerations..." 
+                            {...field} 
+                            value={field.value || ""}
+                            data-testid="input-exercise-safety-notes"
                           />
                         </FormControl>
                         <FormMessage />
