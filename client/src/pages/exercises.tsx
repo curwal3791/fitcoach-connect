@@ -27,6 +27,9 @@ const exerciseFormSchema = z.object({
   category: z.string().min(1, "Category is required"),
   difficultyLevel: z.string().min(1, "Difficulty level is required"),
   equipmentNeeded: z.string().optional(),
+  classTypeId: z.string().optional(),
+  primaryMuscles: z.string().optional(),
+  secondaryMuscles: z.string().optional(),
 });
 
 type ExerciseFormData = z.infer<typeof exerciseFormSchema>;
@@ -108,6 +111,9 @@ export default function Exercises() {
       difficultyLevel: "Beginner",
       category: "strength",
       equipmentNeeded: "",
+      classTypeId: "none",
+      primaryMuscles: "",
+      secondaryMuscles: "",
     },
   });
 
@@ -119,11 +125,11 @@ export default function Exercises() {
         category: data.category,
         difficultyLevel: data.difficultyLevel,
         equipmentNeeded: data.equipmentNeeded || null,
-        primaryMuscles: null,
-        secondaryMuscles: null,
+        primaryMuscles: data.primaryMuscles || null,
+        secondaryMuscles: data.secondaryMuscles || null,
         modifications: null,
         safetyNotes: null,
-        classTypeId: null,
+        classTypeId: data.classTypeId === "none" ? null : data.classTypeId,
         isPublic: false,
       };
       return await apiRequest("/api/exercises", { 
@@ -369,7 +375,7 @@ export default function Exercises() {
                     )}
                   />
                   
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="category"
@@ -418,6 +424,38 @@ export default function Exercises() {
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="classTypeId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Class Type</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || "none"}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-exercise-class-type">
+                                <SelectValue placeholder="Select class type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">No specific class</SelectItem>
+                              {classTypes && classTypes.length > 0 ? (
+                                classTypes.map((classType: ClassType) => (
+                                  <SelectItem key={classType.id} value={classType.id}>
+                                    {classType.name}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no-types" disabled>No class types available</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={form.control}
@@ -431,6 +469,46 @@ export default function Exercises() {
                               {...field} 
                               value={field.value || ""}
                               data-testid="input-exercise-equipment"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="primaryMuscles"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Primary Muscles</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g. Chest, Shoulders" 
+                              {...field} 
+                              value={field.value || ""}
+                              data-testid="input-exercise-primary-muscles"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="secondaryMuscles"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Secondary Muscles</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g. Triceps, Core" 
+                              {...field} 
+                              value={field.value || ""}
+                              data-testid="input-exercise-secondary-muscles"
                             />
                           </FormControl>
                           <FormMessage />
