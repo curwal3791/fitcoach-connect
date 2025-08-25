@@ -340,7 +340,7 @@ export default function Exercises() {
             <p className="text-gray-600 mt-1">Browse and manage your exercise library</p>
           </div>
           <div className="flex gap-2">
-            {exercises && exercises.length < 50 && (
+            {exercises && !exercisesLoading && exercises.length < 50 && (
               <Button 
                 onClick={handleFixExercises}
                 disabled={isFixing}
