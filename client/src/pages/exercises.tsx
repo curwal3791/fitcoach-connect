@@ -222,9 +222,27 @@ export default function Exercises() {
 
   const deleteExerciseMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiRequest(`/api/exercises/${id}`, { method: "DELETE" });
-      // DELETE returns 204 No Content, don't try to parse JSON
-      return response;
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`/api/exercises/${id}`, {
+        method: "DELETE",
+        credentials: 'include',
+        headers,
+      });
+
+      if (!response.ok) {
+        const text = (await response.text()) || response.statusText;
+        throw new Error(`${response.status}: ${text}`);
+      }
+      
+      // DELETE returns 204 No Content, no JSON to parse
+      return null;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
