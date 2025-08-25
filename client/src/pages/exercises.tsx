@@ -609,6 +609,30 @@ export default function Exercises() {
           </CardContent>
         </Card>
 
+        {/* Debug Info */}
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">
+            <strong>Debug:</strong> Found {exercises?.length || 0} exercises | Loading: {exercisesLoading ? 'Yes' : 'No'}
+          </p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2"
+            onClick={() => {
+              setFilters({
+                search: "",
+                category: "all", 
+                difficulty: "all",
+                equipment: "all",
+                classType: "all"
+              });
+              refetchExercises();
+            }}
+          >
+            Reset All Filters & Refresh
+          </Button>
+        </div>
+
         {/* Exercise Grid */}
         {exercisesLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
