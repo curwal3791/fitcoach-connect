@@ -204,7 +204,7 @@ export default function Exercises() {
 
   const deleteExerciseMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/exercises/${id}`);
+      await apiRequest(`/api/exercises/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
@@ -836,6 +836,7 @@ export default function Exercises() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </>
   );
 }
