@@ -172,11 +172,23 @@ export default function Exercises() {
   const updateExerciseMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ExerciseFormData }) => {
       const processedData = {
-        ...data,
-        classTypeId: data.classTypeId === "none" ? null : data.classTypeId
+        name: data.name,
+        description: data.description || null,
+        category: data.category,
+        difficultyLevel: data.difficultyLevel,
+        equipmentNeeded: data.equipmentNeeded || null,
+        primaryMuscles: data.primaryMuscles || null,
+        secondaryMuscles: data.secondaryMuscles || null,
+        modifications: null,
+        safetyNotes: null,
+        classTypeId: data.classTypeId === "none" ? null : data.classTypeId,
+        isPublic: false,
       };
-      const response = await apiRequest(`/api/exercises/${id}`, { method: "PUT", body: JSON.stringify(processedData), headers: { "Content-Type": "application/json" } });
-      return response.json();
+      return await apiRequest(`/api/exercises/${id}`, { 
+        method: "PUT", 
+        body: JSON.stringify(processedData), 
+        headers: { "Content-Type": "application/json" } 
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
@@ -210,7 +222,9 @@ export default function Exercises() {
 
   const deleteExerciseMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest(`/api/exercises/${id}`, { method: "DELETE" });
+      const response = await apiRequest(`/api/exercises/${id}`, { method: "DELETE" });
+      // DELETE returns 204 No Content, don't try to parse JSON
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
@@ -699,25 +713,6 @@ export default function Exercises() {
                 )}
               />
               
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Describe the exercise..." 
-                        {...field} 
-                        value={field.value || ""}
-                        data-testid="input-edit-exercise-description"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -725,7 +720,7 @@ export default function Exercises() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-edit-exercise-category">
                             <SelectValue placeholder="Select category" />
@@ -747,11 +742,36 @@ export default function Exercises() {
 
                 <FormField
                   control={form.control}
+                  name="difficultyLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Difficulty</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-edit-exercise-difficulty">
+                            <SelectValue placeholder="Select difficulty" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Beginner">Beginner</SelectItem>
+                          <SelectItem value="Intermediate">Intermediate</SelectItem>
+                          <SelectItem value="Advanced">Advanced</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
                   name="classTypeId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Class Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value || "none"}>
+                      <Select onValueChange={field.onChange} value={field.value || "none"}>
                         <FormControl>
                           <SelectTrigger data-testid="select-edit-exercise-class-type">
                             <SelectValue placeholder="Select class type" />
@@ -777,22 +797,58 @@ export default function Exercises() {
 
                 <FormField
                   control={form.control}
-                  name="difficultyLevel"
+                  name="equipmentNeeded"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Difficulty Level</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-edit-exercise-difficulty">
-                            <SelectValue placeholder="Select difficulty" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Beginner">Beginner</SelectItem>
-                          <SelectItem value="Intermediate">Intermediate</SelectItem>
-                          <SelectItem value="Advanced">Advanced</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Equipment</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g. Dumbbells" 
+                          {...field} 
+                          value={field.value || ""}
+                          data-testid="input-edit-exercise-equipment"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="primaryMuscles"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Primary Muscles</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g. Chest, Shoulders" 
+                          {...field} 
+                          value={field.value || ""}
+                          data-testid="input-edit-exercise-primary-muscles"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="secondaryMuscles"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Secondary Muscles</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g. Triceps, Core" 
+                          {...field} 
+                          value={field.value || ""}
+                          data-testid="input-edit-exercise-secondary-muscles"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -801,16 +857,17 @@ export default function Exercises() {
 
               <FormField
                 control={form.control}
-                name="equipmentNeeded"
+                name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Equipment Needed</FormLabel>
+                    <FormLabel>Description (Optional)</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="e.g. Dumbbells, No Equipment" 
+                      <Textarea 
+                        placeholder="Brief description of the exercise..." 
                         {...field} 
                         value={field.value || ""}
-                        data-testid="input-edit-exercise-equipment"
+                        rows={2}
+                        data-testid="input-edit-exercise-description"
                       />
                     </FormControl>
                     <FormMessage />
