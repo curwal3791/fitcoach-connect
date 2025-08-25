@@ -270,46 +270,9 @@ export default function Exercises() {
     },
   });
 
-  // Clear all exercises mutation
-  const clearExercisesMutation = useMutation({
-    mutationFn: () => apiRequest("/api/clear-exercises", {
-      method: "POST",
-    }),
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      toast({
-        title: "Success",
-        description: data.message || "All exercises cleared!",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to clear exercises",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleFixExercises = () => {
     setIsFixing(true);
     fixExercisesMutation.mutate();
-  };
-
-  const handleClearExercises = () => {
-    clearExercisesMutation.mutate();
   };
 
   const onSubmit = (data: ExerciseFormData) => {
@@ -371,30 +334,18 @@ export default function Exercises() {
   return (
     <>
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8" data-testid="exercises-page">
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Exercise Database</h1>
             <p className="text-gray-600 mt-1">Browse and manage your exercise library</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {exercises && exercises.length > 0 && (
-              <Button 
-                onClick={handleClearExercises}
-                disabled={clearExercisesMutation.isPending}
-                variant="outline"
-                className="bg-red-50 border-red-200 hover:bg-red-100 text-red-700"
-                data-testid="button-clear-exercises"
-              >
-                {clearExercisesMutation.isPending ? "Clearing..." : "Clear All Exercises"}
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90" data-testid="button-add-exercise">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Exercise
               </Button>
-            )}
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90" data-testid="button-add-exercise">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Exercise
-                </Button>
-              </DialogTrigger>
+            </DialogTrigger>
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Create New Exercise</DialogTitle>
@@ -873,7 +824,6 @@ export default function Exercises() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      </div>
     </>
   );
 }
