@@ -340,7 +340,7 @@ export default function Exercises() {
             <p className="text-gray-600 mt-1">Browse and manage your exercise library</p>
           </div>
           <div className="flex gap-2">
-            {exercises && !exercisesLoading && exercises.length < 50 && (
+            {exercises && !exercisesLoading && exercises.length < 80 && (
               <Button 
                 onClick={handleFixExercises}
                 disabled={isFixing}
@@ -614,11 +614,15 @@ export default function Exercises() {
           <p className="text-sm text-yellow-800">
             <strong>Debug:</strong> Found {exercises?.length || 0} exercises | Loading: {exercisesLoading ? 'Yes' : 'No'}
           </p>
+          <p className="text-xs text-yellow-700 mt-1">
+            Filters: search="{filters.search}", category="{filters.category}", difficulty="{filters.difficulty}", equipment="{filters.equipment}", classType="{filters.classType}"
+          </p>
           <Button 
             variant="outline" 
             size="sm" 
             className="mt-2"
             onClick={() => {
+              console.log("Before reset - exercises:", exercises?.length);
               setFilters({
                 search: "",
                 category: "all", 
@@ -627,6 +631,10 @@ export default function Exercises() {
                 classType: "all"
               });
               refetchExercises();
+              toast({
+                title: "Filters Reset",
+                description: "Cleared all filters and refreshed data",
+              });
             }}
           >
             Reset All Filters & Refresh
