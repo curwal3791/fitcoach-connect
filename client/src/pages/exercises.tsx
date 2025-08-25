@@ -222,6 +222,7 @@ export default function Exercises() {
       });
     },
     onError: (error) => {
+      console.error("Delete exercise error:", error);
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -235,7 +236,7 @@ export default function Exercises() {
       }
       toast({
         title: "Error",
-        description: "Failed to delete exercise",
+        description: "Failed to delete exercise. Please try again.",
         variant: "destructive",
       });
     },
@@ -299,10 +300,7 @@ export default function Exercises() {
       equipmentNeeded: exercise.equipmentNeeded || "",
       primaryMuscles: exercise.primaryMuscles || "",
       secondaryMuscles: exercise.secondaryMuscles || "",
-      modifications: exercise.modifications || "",
-      safetyNotes: exercise.safetyNotes || "",
       classTypeId: exercise.classTypeId || "none",
-      isPublic: exercise.isPublic || false,
     });
     setIsEditDialogOpen(true);
   };
