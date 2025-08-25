@@ -270,9 +270,9 @@ export default function Exercises() {
     },
   });
 
-  // Cleanup duplicate exercises mutation
-  const cleanupExercisesMutation = useMutation({
-    mutationFn: () => apiRequest("/api/cleanup-exercises", {
+  // Clear all exercises mutation
+  const clearExercisesMutation = useMutation({
+    mutationFn: () => apiRequest("/api/clear-exercises", {
       method: "POST",
     }),
     onSuccess: (data: any) => {
@@ -280,7 +280,7 @@ export default function Exercises() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       toast({
         title: "Success",
-        description: data.message || "Duplicate exercises removed!",
+        description: data.message || "All exercises cleared!",
       });
     },
     onError: (error) => {
@@ -297,7 +297,7 @@ export default function Exercises() {
       }
       toast({
         title: "Error",
-        description: "Failed to cleanup exercises",
+        description: "Failed to clear exercises",
         variant: "destructive",
       });
     },
@@ -308,8 +308,8 @@ export default function Exercises() {
     fixExercisesMutation.mutate();
   };
 
-  const handleCleanupExercises = () => {
-    cleanupExercisesMutation.mutate();
+  const handleClearExercises = () => {
+    clearExercisesMutation.mutate();
   };
 
   const onSubmit = (data: ExerciseFormData) => {
@@ -377,26 +377,15 @@ export default function Exercises() {
             <p className="text-gray-600 mt-1">Browse and manage your exercise library</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {exercises && !exercisesLoading && exercises.length < 80 && (
+            {exercises && exercises.length > 0 && (
               <Button 
-                onClick={handleFixExercises}
-                disabled={isFixing}
-                variant="outline"
-                className="bg-orange-50 border-orange-200 hover:bg-orange-100 text-orange-700"
-                data-testid="button-fix-exercises"
-              >
-                {isFixing ? "Fixing..." : "Fix Missing Exercises"}
-              </Button>
-            )}
-            {exercises && exercises.length > 50 && (
-              <Button 
-                onClick={handleCleanupExercises}
-                disabled={cleanupExercisesMutation.isPending}
+                onClick={handleClearExercises}
+                disabled={clearExercisesMutation.isPending}
                 variant="outline"
                 className="bg-red-50 border-red-200 hover:bg-red-100 text-red-700"
-                data-testid="button-cleanup-exercises"
+                data-testid="button-clear-exercises"
               >
-                {cleanupExercisesMutation.isPending ? "Cleaning..." : "Remove Duplicates"}
+                {clearExercisesMutation.isPending ? "Clearing..." : "Clear All Exercises"}
               </Button>
             )}
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

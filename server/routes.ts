@@ -1185,6 +1185,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear all exercises endpoint
+  app.post('/api/clear-exercises', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      console.log('[CLEAR] Clearing all exercises for user:', userId);
+      
+      // Get all exercises for the user and delete them
+      const allExercises = await storage.getExercises({ userId });
+      
+      for (const exercise of allExercises) {
+        await storage.deleteExercise(exercise.id);
+      }
+      
+      console.log(`[CLEAR] Cleared ${allExercises.length} exercises for user: ${userId}`);
+      
+      res.json({
+        success: true,
+        message: `Cleared ${allExercises.length} exercises from database.`,
+        exercisesRemoved: allExercises.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('[CLEAR] Error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error.message, 
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Reseed exercises endpoint
   app.post('/api/reseed-exercises', isAuthenticated, async (req: any, res) => {
     try {
