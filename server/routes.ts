@@ -1130,6 +1130,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clean up duplicate exercises endpoint
+  app.post('/api/cleanup-exercises', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      console.log('[CLEANUP] Starting exercise cleanup for user:', userId);
+      
+      // Get all exercises for the user
+      const allExercises = await storage.getExercises({ userId });
+      
+      // Group by name (case-insensitive)
+      const exercisesByName = new Map<string, any[]>();
+      for (const exercise of allExercises) {
+        const key = exercise.name.toLowerCase().trim();
+        if (!exercisesByName.has(key)) {
+          exercisesByName.set(key, []);
+        }
+        exercisesByName.get(key)!.push(exercise);
+      }
+      
+      let duplicatesRemoved = 0;
+      
+      // For each group, keep the first one and delete the rest
+      for (const [name, exercises] of exercisesByName.entries()) {
+        if (exercises.length > 1) {
+          console.log(`[CLEANUP] Found ${exercises.length} duplicates of "${exercises[0].name}"`);
+          
+          // Keep the first exercise, delete the rest
+          for (let i = 1; i < exercises.length; i++) {
+            await storage.deleteExercise(exercises[i].id);
+            duplicatesRemoved++;
+          }
+        }
+      }
+      
+      const remainingExercises = await storage.getExercises({ userId });
+      
+      console.log('[CLEANUP] Cleanup completed. Removed:', duplicatesRemoved, 'Total remaining:', remainingExercises.length);
+      
+      res.json({
+        success: true,
+        message: `Cleanup completed! Removed ${duplicatesRemoved} duplicate exercises.`,
+        duplicatesRemoved,
+        totalExercises: remainingExercises.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('[CLEANUP] Error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error.message, 
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Reseed exercises endpoint
   app.post('/api/reseed-exercises', isAuthenticated, async (req: any, res) => {
     try {

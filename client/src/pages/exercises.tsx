@@ -270,9 +270,46 @@ export default function Exercises() {
     },
   });
 
+  // Cleanup duplicate exercises mutation
+  const cleanupExercisesMutation = useMutation({
+    mutationFn: () => apiRequest("/api/cleanup-exercises", {
+      method: "POST",
+    }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({
+        title: "Success",
+        description: data.message || "Duplicate exercises removed!",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to cleanup exercises",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleFixExercises = () => {
     setIsFixing(true);
     fixExercisesMutation.mutate();
+  };
+
+  const handleCleanupExercises = () => {
+    cleanupExercisesMutation.mutate();
   };
 
   const onSubmit = (data: ExerciseFormData) => {
@@ -334,12 +371,12 @@ export default function Exercises() {
   return (
     <>
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8" data-testid="exercises-page">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Exercise Database</h1>
             <p className="text-gray-600 mt-1">Browse and manage your exercise library</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {exercises && !exercisesLoading && exercises.length < 80 && (
               <Button 
                 onClick={handleFixExercises}
@@ -349,6 +386,17 @@ export default function Exercises() {
                 data-testid="button-fix-exercises"
               >
                 {isFixing ? "Fixing..." : "Fix Missing Exercises"}
+              </Button>
+            )}
+            {exercises && exercises.length > 50 && (
+              <Button 
+                onClick={handleCleanupExercises}
+                disabled={cleanupExercisesMutation.isPending}
+                variant="outline"
+                className="bg-red-50 border-red-200 hover:bg-red-100 text-red-700"
+                data-testid="button-cleanup-exercises"
+              >
+                {cleanupExercisesMutation.isPending ? "Cleaning..." : "Remove Duplicates"}
               </Button>
             )}
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
