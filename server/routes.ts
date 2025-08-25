@@ -34,18 +34,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Force seed and return current counts
       await storage.seedDefaultData(userId);
       
-      // Get current data counts
+      // Also force exercise creation for existing class types that might not have exercises
       const classTypes = await storage.getClassTypes(userId);
-      const exercises = await storage.getExercises(userId);
+      for (const classType of classTypes) {
+        const existingExercises = await storage.getExercises({ classType: classType.id, userId });
+        if (existingExercises.length === 0) {
+          console.log(`Creating missing exercises for class type: ${classType.name}`);
+          await storage.createDefaultExercisesForClass(classType, userId);
+        }
+      }
+      
+      // Get current data counts
+      const finalExercises = await storage.getExercises(userId);
       
       res.json({ 
         message: "Data refresh completed", 
         classTypes: classTypes.length,
-        exercises: exercises.length
+        exercises: finalExercises.length
       });
     } catch (error) {
       console.error("Error seeding data:", error);
       res.status(500).json({ message: "Failed to seed data" });
+    }
+  });
+
+  // Create exercises for existing class types
+  app.post('/api/create-exercises-for-existing-classes', async (req, res) => {
+    try {
+      console.log("Creating exercises for existing class types...");
+      
+      // Get all users
+      const allUsers = await storage.getAllUsers();
+      let totalExercisesCreated = 0;
+      
+      for (const user of allUsers) {
+        const classTypes = await storage.getClassTypes(user.id);
+        console.log(`Processing ${classTypes.length} class types for user: ${user.id}`);
+        
+        for (const classType of classTypes) {
+          try {
+            console.log(`Creating exercises for ${classType.name}...`);
+            await storage.createDefaultExercisesForClass(classType, user.id);
+            totalExercisesCreated += 10; // Each class type gets 10 exercises
+          } catch (error) {
+            console.error(`Failed to create exercises for ${classType.name}:`, error);
+          }
+        }
+      }
+      
+      res.json({ message: `Created ${totalExercisesCreated} exercises successfully` });
+    } catch (error) {
+      console.error("Error creating exercises:", error);
+      res.status(500).json({ message: "Failed to create exercises" });
     }
   });
 
@@ -63,6 +103,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`Force seeding for user: ${user.id}`);
           await storage.seedDefaultData(user.id);
+          
+          // Also ensure exercises exist for all class types
+          const classTypes = await storage.getClassTypes(user.id);
+          for (const classType of classTypes) {
+            const existingExercises = await storage.getExercises({ classType: classType.id, userId: user.id });
+            if (existingExercises.length === 0) {
+              console.log(`Creating missing exercises for class type: ${classType.name} (user: ${user.id})`);
+              await storage.createDefaultExercisesForClass(classType, user.id);
+            }
+          }
         } catch (error) {
           console.error(`Failed to seed user ${user.id}:`, error);
         }

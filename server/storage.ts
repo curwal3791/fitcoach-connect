@@ -285,6 +285,7 @@ export class DatabaseStorage implements IStorage {
     for (const exercise of defaultExercises) {
       await this.createExercise({
         ...exercise,
+        classTypeId: classType.id,
         createdByUserId: userId,
         isPublic: true,
       });
@@ -294,191 +295,160 @@ export class DatabaseStorage implements IStorage {
   private getDefaultExercisesForClassType(className: string): Omit<InsertExercise, 'createdByUserId' | 'isPublic'>[] {
     const name = className.toLowerCase();
     
-    if (name.includes('hiit') || name.includes('cardio')) {
+    if (name.includes('yoga')) {
       return [
-        {
-          name: "Jumping Jacks",
-          description: "Full-body cardio exercise that increases heart rate and burns calories",
-          difficultyLevel: "Beginner",
-          equipmentNeeded: "None",
-          primaryMuscles: "Full body",
-          secondaryMuscles: "Core",
-          category: "cardio",
-          caloriesPerMinute: 8,
-          modifications: "Step touch for low impact",
-          safetyNotes: "Land softly on balls of feet"
-        },
-        {
-          name: "Burpees",
-          description: "High-intensity full-body exercise combining squat, plank, and jump",
-          difficultyLevel: "Advanced",
-          equipmentNeeded: "None",
-          primaryMuscles: "Full body",
-          secondaryMuscles: "Core, shoulders",
-          category: "cardio",
-          caloriesPerMinute: 12,
-          modifications: "Remove jump or push-up",
-          safetyNotes: "Maintain proper form throughout"
-        },
-        {
-          name: "High Knees",
-          description: "Running in place while lifting knees to waist level",
-          difficultyLevel: "Intermediate",
-          equipmentNeeded: "None",
-          primaryMuscles: "Legs, core",
-          secondaryMuscles: "Glutes",
-          category: "cardio",
-          caloriesPerMinute: 10,
-          modifications: "March in place for lower intensity",
-          safetyNotes: "Keep core engaged"
-        },
-        {
-          name: "Mountain Climbers",
-          description: "Plank position with alternating knee drives",
-          difficultyLevel: "Intermediate",
-          equipmentNeeded: "None",
-          primaryMuscles: "Core, shoulders",
-          secondaryMuscles: "Legs",
-          category: "cardio",
-          caloriesPerMinute: 9,
-          modifications: "Slow tempo or hands on elevated surface",
-          safetyNotes: "Keep hips level and core tight"
-        }
+        { name: "Child's Pose", description: "Restorative yoga pose for relaxation and gentle stretching", difficultyLevel: "Beginner", equipmentNeeded: "Yoga mat", primaryMuscles: "Back, hips", secondaryMuscles: "Shoulders", category: "flexibility", caloriesPerMinute: 2, modifications: "Wide-knee child's pose", safetyNotes: "Listen to your body" },
+        { name: "Downward Dog", description: "Foundational yoga pose that stretches and strengthens", difficultyLevel: "Intermediate", equipmentNeeded: "Yoga mat", primaryMuscles: "Shoulders, hamstrings", secondaryMuscles: "Core, calves", category: "flexibility", caloriesPerMinute: 3, modifications: "Hands on blocks", safetyNotes: "Distribute weight evenly" },
+        { name: "Warrior I", description: "Standing yoga pose that builds strength and stability", difficultyLevel: "Intermediate", equipmentNeeded: "Yoga mat", primaryMuscles: "Legs, core", secondaryMuscles: "Shoulders, back", category: "balance", caloriesPerMinute: 3, modifications: "Use wall for support", safetyNotes: "Keep front knee over ankle" },
+        { name: "Warrior II", description: "Strong standing pose that opens hips and strengthens legs", difficultyLevel: "Intermediate", equipmentNeeded: "Yoga mat", primaryMuscles: "Legs, core", secondaryMuscles: "Arms, back", category: "balance", caloriesPerMinute: 4, modifications: "Hands on hips", safetyNotes: "Keep torso upright" },
+        { name: "Tree Pose", description: "Standing balance pose that improves focus and stability", difficultyLevel: "Intermediate", equipmentNeeded: "Yoga mat", primaryMuscles: "Legs, core", secondaryMuscles: "Ankles", category: "balance", caloriesPerMinute: 2, modifications: "Toe on ground for balance", safetyNotes: "Avoid placing foot on knee" },
+        { name: "Cat-Cow Stretch", description: "Spinal mobility exercise alternating between arch and round", difficultyLevel: "Beginner", equipmentNeeded: "Yoga mat", primaryMuscles: "Spine, core", secondaryMuscles: "Shoulders", category: "flexibility", caloriesPerMinute: 2, modifications: "Seated version", safetyNotes: "Move slowly" },
+        { name: "Cobra Pose", description: "Backbend that strengthens the spine and opens the chest", difficultyLevel: "Intermediate", equipmentNeeded: "Yoga mat", primaryMuscles: "Back, core", secondaryMuscles: "Arms", category: "flexibility", caloriesPerMinute: 3, modifications: "Keep forearms down", safetyNotes: "Don't overarch" },
+        { name: "Triangle Pose", description: "Standing pose that stretches sides and strengthens legs", difficultyLevel: "Intermediate", equipmentNeeded: "Yoga mat", primaryMuscles: "Legs, core", secondaryMuscles: "Back, arms", category: "flexibility", caloriesPerMinute: 3, modifications: "Hand on shin", safetyNotes: "Keep both legs straight" },
+        { name: "Seated Forward Fold", description: "Calming seated pose that stretches the spine and hamstrings", difficultyLevel: "Beginner", equipmentNeeded: "Yoga mat", primaryMuscles: "Hamstrings, back", secondaryMuscles: "Calves", category: "flexibility", caloriesPerMinute: 2, modifications: "Bend knees slightly", safetyNotes: "Don't force the stretch" },
+        { name: "Savasana", description: "Final relaxation pose for complete rest and integration", difficultyLevel: "Beginner", equipmentNeeded: "Yoga mat", primaryMuscles: "None", secondaryMuscles: "None", category: "flexibility", caloriesPerMinute: 1, modifications: "Use props for comfort", safetyNotes: "Stay warm and still" }
       ];
     }
     
-    if (name.includes('strength') || name.includes('weight')) {
+    if (name.includes('hiit')) {
       return [
-        {
-          name: "Push-ups",
-          description: "Upper body strength exercise targeting chest, shoulders, and triceps",
-          difficultyLevel: "Intermediate",
-          equipmentNeeded: "None",
-          primaryMuscles: "Chest, shoulders, triceps",
-          secondaryMuscles: "Core",
-          category: "strength",
-          caloriesPerMinute: 6,
-          modifications: "Knee push-ups or incline push-ups",
-          safetyNotes: "Keep straight line from head to heels"
-        },
-        {
-          name: "Squats",
-          description: "Lower body strength exercise targeting glutes and quadriceps",
-          difficultyLevel: "Beginner",
-          equipmentNeeded: "None",
-          primaryMuscles: "Glutes, quadriceps",
-          secondaryMuscles: "Core, calves",
-          category: "strength",
-          caloriesPerMinute: 5,
-          modifications: "Chair-assisted squats",
-          safetyNotes: "Keep knees behind toes"
-        },
-        {
-          name: "Lunges",
-          description: "Single-leg strength exercise for lower body and balance",
-          difficultyLevel: "Intermediate",
-          equipmentNeeded: "None",
-          primaryMuscles: "Glutes, quadriceps",
-          secondaryMuscles: "Hamstrings, calves",
-          category: "strength",
-          caloriesPerMinute: 6,
-          modifications: "Stationary lunges or assisted lunges",
-          safetyNotes: "Keep front knee over ankle"
-        },
-        {
-          name: "Plank",
-          description: "Core strengthening exercise in push-up position hold",
-          difficultyLevel: "Intermediate",
-          equipmentNeeded: "None",
-          primaryMuscles: "Core",
-          secondaryMuscles: "Shoulders, glutes",
-          category: "strength",
-          caloriesPerMinute: 4,
-          modifications: "Knee plank or wall plank",
-          safetyNotes: "Keep straight line from head to heels"
-        }
+        { name: "Burpees", description: "Full-body explosive movement combining squat, plank, and jump", difficultyLevel: "Advanced", equipmentNeeded: "None", primaryMuscles: "Full body", secondaryMuscles: "Core", category: "cardio", caloriesPerMinute: 12, modifications: "Step back instead of jump", safetyNotes: "Land softly" },
+        { name: "Mountain Climbers", description: "High-intensity plank exercise with alternating knee drives", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Core, shoulders", secondaryMuscles: "Legs", category: "cardio", caloriesPerMinute: 10, modifications: "Slow tempo", safetyNotes: "Keep hips level" },
+        { name: "Jump Squats", description: "Explosive lower body exercise adding jump to basic squat", difficultyLevel: "Advanced", equipmentNeeded: "None", primaryMuscles: "Glutes, quads", secondaryMuscles: "Calves, core", category: "cardio", caloriesPerMinute: 11, modifications: "Regular squats", safetyNotes: "Land with soft knees" },
+        { name: "High Knees", description: "Running in place while lifting knees to hip level", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Legs, core", secondaryMuscles: "Glutes", category: "cardio", caloriesPerMinute: 9, modifications: "March in place", safetyNotes: "Keep core engaged" },
+        { name: "Jumping Jacks", description: "Classic cardio exercise jumping feet wide with arms overhead", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Full body", secondaryMuscles: "Core", category: "cardio", caloriesPerMinute: 8, modifications: "Step touch", safetyNotes: "Land on balls of feet" },
+        { name: "Sprint Intervals", description: "Maximum effort running intervals for cardiovascular fitness", difficultyLevel: "Advanced", equipmentNeeded: "None", primaryMuscles: "Legs", secondaryMuscles: "Core, arms", category: "cardio", caloriesPerMinute: 15, modifications: "Jog in place", safetyNotes: "Proper warm-up essential" },
+        { name: "Plank Jacks", description: "Plank position with jumping jack leg movement", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Core, shoulders", secondaryMuscles: "Legs", category: "cardio", caloriesPerMinute: 8, modifications: "Step feet out", safetyNotes: "Maintain plank form" },
+        { name: "Squat Thrusts", description: "Dynamic movement from squat to plank and back", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Full body", secondaryMuscles: "Core", category: "cardio", caloriesPerMinute: 10, modifications: "Step back", safetyNotes: "Control the movement" },
+        { name: "Box Step-ups", description: "Explosive step-up movement for power and conditioning", difficultyLevel: "Intermediate", equipmentNeeded: "Box or step", primaryMuscles: "Glutes, quads", secondaryMuscles: "Calves, core", category: "cardio", caloriesPerMinute: 7, modifications: "Regular step-ups", safetyNotes: "Step down controlled" },
+        { name: "Battle Ropes", description: "Intense upper body cardio using heavy training ropes", difficultyLevel: "Advanced", equipmentNeeded: "Battle ropes", primaryMuscles: "Arms, shoulders", secondaryMuscles: "Core, back", category: "cardio", caloriesPerMinute: 13, modifications: "Lighter ropes", safetyNotes: "Maintain posture" }
       ];
     }
     
-    if (name.includes('yoga') || name.includes('pilates')) {
+    if (name.includes('pilates')) {
       return [
-        {
-          name: "Child's Pose",
-          description: "Restorative yoga pose for relaxation and gentle stretching",
-          difficultyLevel: "Beginner",
-          equipmentNeeded: "Yoga mat",
-          primaryMuscles: "Back, hips",
-          secondaryMuscles: "Shoulders",
-          category: "flexibility",
-          caloriesPerMinute: 2,
-          modifications: "Wide-knee child's pose",
-          safetyNotes: "Listen to your body, don't force"
-        },
-        {
-          name: "Downward Dog",
-          description: "Foundational yoga pose that stretches and strengthens",
-          difficultyLevel: "Intermediate",
-          equipmentNeeded: "Yoga mat",
-          primaryMuscles: "Shoulders, hamstrings",
-          secondaryMuscles: "Core, calves",
-          category: "flexibility",
-          caloriesPerMinute: 3,
-          modifications: "Hands on blocks or bend knees",
-          safetyNotes: "Distribute weight evenly"
-        },
-        {
-          name: "Cat-Cow Stretch",
-          description: "Spinal mobility exercise alternating between arch and round",
-          difficultyLevel: "Beginner",
-          equipmentNeeded: "Yoga mat",
-          primaryMuscles: "Spine, core",
-          secondaryMuscles: "Shoulders",
-          category: "flexibility",
-          caloriesPerMinute: 2,
-          modifications: "Seated version available",
-          safetyNotes: "Move slowly and mindfully"
-        },
-        {
-          name: "Warrior I",
-          description: "Standing yoga pose that builds strength and stability",
-          difficultyLevel: "Intermediate",
-          equipmentNeeded: "Yoga mat",
-          primaryMuscles: "Legs, core",
-          secondaryMuscles: "Shoulders, back",
-          category: "balance",
-          caloriesPerMinute: 3,
-          modifications: "Use wall for support",
-          safetyNotes: "Keep front knee over ankle"
-        }
+        { name: "The Hundred", description: "Classic Pilates exercise focusing on core strength and breathing", difficultyLevel: "Intermediate", equipmentNeeded: "Mat", primaryMuscles: "Core", secondaryMuscles: "Arms", category: "strength", caloriesPerMinute: 4, modifications: "Bend knees", safetyNotes: "Keep lower back pressed down" },
+        { name: "Single Leg Circles", description: "Controlled leg circles to improve hip mobility and stability", difficultyLevel: "Beginner", equipmentNeeded: "Mat", primaryMuscles: "Hip flexors", secondaryMuscles: "Core, glutes", category: "flexibility", caloriesPerMinute: 3, modifications: "Smaller circles", safetyNotes: "Keep hips stable" },
+        { name: "Roll Up", description: "Spinal articulation exercise rolling up from lying to sitting", difficultyLevel: "Intermediate", equipmentNeeded: "Mat", primaryMuscles: "Core", secondaryMuscles: "Hip flexors", category: "strength", caloriesPerMinute: 4, modifications: "Use assistance", safetyNotes: "Move vertebra by vertebra" },
+        { name: "Teaser", description: "Advanced core exercise balancing on sit bones with straight legs", difficultyLevel: "Advanced", equipmentNeeded: "Mat", primaryMuscles: "Core", secondaryMuscles: "Hip flexors", category: "strength", caloriesPerMinute: 5, modifications: "Bent knees", safetyNotes: "Don't strain neck" },
+        { name: "Swan", description: "Back extension exercise strengthening posterior chain", difficultyLevel: "Intermediate", equipmentNeeded: "Mat", primaryMuscles: "Back extensors", secondaryMuscles: "Glutes", category: "strength", caloriesPerMinute: 4, modifications: "Hands remain down", safetyNotes: "Lift from back, not arms" },
+        { name: "Side Plank", description: "Lateral core strengthening exercise in side-lying position", difficultyLevel: "Intermediate", equipmentNeeded: "Mat", primaryMuscles: "Obliques", secondaryMuscles: "Shoulders, glutes", category: "strength", caloriesPerMinute: 4, modifications: "Knees down", safetyNotes: "Keep body in straight line" },
+        { name: "Leg Pull Front", description: "Plank variation with leg lifts for core and shoulder stability", difficultyLevel: "Advanced", equipmentNeeded: "Mat", primaryMuscles: "Core, shoulders", secondaryMuscles: "Glutes", category: "strength", caloriesPerMinute: 5, modifications: "Hold plank only", safetyNotes: "Don't let hips sag" },
+        { name: "Spine Stretch Forward", description: "Seated forward flexion for spinal mobility and hamstring stretch", difficultyLevel: "Beginner", equipmentNeeded: "Mat", primaryMuscles: "Spine", secondaryMuscles: "Hamstrings", category: "flexibility", caloriesPerMinute: 2, modifications: "Sit on cushion", safetyNotes: "Round spine sequentially" },
+        { name: "Double Leg Stretch", description: "Core exercise with coordinated arm and leg movements", difficultyLevel: "Intermediate", equipmentNeeded: "Mat", primaryMuscles: "Core", secondaryMuscles: "Arms, legs", category: "strength", caloriesPerMinute: 4, modifications: "Keep head down", safetyNotes: "Don't let back arch" },
+        { name: "Corkscrew", description: "Advanced exercise combining core strength with spinal rotation", difficultyLevel: "Advanced", equipmentNeeded: "Mat", primaryMuscles: "Core", secondaryMuscles: "Hip flexors", category: "strength", caloriesPerMinute: 5, modifications: "Smaller circles", safetyNotes: "Control the movement" }
       ];
     }
     
-    // Default exercises for any other class type
+    if (name.includes('crossfit')) {
+      return [
+        { name: "Wall Balls", description: "Functional movement throwing medicine ball to target on wall", difficultyLevel: "Intermediate", equipmentNeeded: "Medicine ball", primaryMuscles: "Legs, shoulders", secondaryMuscles: "Core", category: "strength", caloriesPerMinute: 10, modifications: "Lighter ball", safetyNotes: "Full squat depth" },
+        { name: "Box Jumps", description: "Explosive jump onto elevated platform for power development", difficultyLevel: "Intermediate", equipmentNeeded: "Plyo box", primaryMuscles: "Glutes, quads", secondaryMuscles: "Calves", category: "cardio", caloriesPerMinute: 9, modifications: "Step-ups", safetyNotes: "Land softly, step down" },
+        { name: "Kettlebell Swings", description: "Hip-hinge movement generating power through posterior chain", difficultyLevel: "Intermediate", equipmentNeeded: "Kettlebell", primaryMuscles: "Glutes, hamstrings", secondaryMuscles: "Core, shoulders", category: "strength", caloriesPerMinute: 8, modifications: "Lighter weight", safetyNotes: "Drive with hips" },
+        { name: "Push Press", description: "Overhead pressing movement using leg drive for assistance", difficultyLevel: "Intermediate", equipmentNeeded: "Barbell or dumbbells", primaryMuscles: "Shoulders", secondaryMuscles: "Legs, core", category: "strength", caloriesPerMinute: 6, modifications: "Lighter weight", safetyNotes: "Keep core tight" },
+        { name: "Pull-ups", description: "Upper body pulling exercise for back and arm strength", difficultyLevel: "Advanced", equipmentNeeded: "Pull-up bar", primaryMuscles: "Back, arms", secondaryMuscles: "Core", category: "strength", caloriesPerMinute: 7, modifications: "Assisted pull-ups", safetyNotes: "Full range of motion" },
+        { name: "Thrusters", description: "Combination front squat and overhead press movement", difficultyLevel: "Advanced", equipmentNeeded: "Barbell or dumbbells", primaryMuscles: "Full body", secondaryMuscles: "Core", category: "strength", caloriesPerMinute: 11, modifications: "Lighter weight", safetyNotes: "Keep chest up" },
+        { name: "Double Unders", description: "Jump rope technique passing rope twice per jump", difficultyLevel: "Advanced", equipmentNeeded: "Jump rope", primaryMuscles: "Calves", secondaryMuscles: "Core, shoulders", category: "cardio", caloriesPerMinute: 12, modifications: "Single unders", safetyNotes: "Stay on balls of feet" },
+        { name: "Deadlifts", description: "Fundamental hip-hinge movement lifting weight from ground", difficultyLevel: "Intermediate", equipmentNeeded: "Barbell", primaryMuscles: "Hamstrings, glutes", secondaryMuscles: "Back, core", category: "strength", caloriesPerMinute: 6, modifications: "Lighter weight", safetyNotes: "Keep back straight" },
+        { name: "Rowing", description: "Full-body cardio exercise using rowing machine", difficultyLevel: "Intermediate", equipmentNeeded: "Rowing machine", primaryMuscles: "Back, legs", secondaryMuscles: "Core, arms", category: "cardio", caloriesPerMinute: 10, modifications: "Slower pace", safetyNotes: "Drive with legs first" },
+        { name: "Handstand Push-ups", description: "Inverted pressing movement for shoulder and core strength", difficultyLevel: "Advanced", equipmentNeeded: "Wall", primaryMuscles: "Shoulders", secondaryMuscles: "Core, triceps", category: "strength", caloriesPerMinute: 8, modifications: "Pike push-ups", safetyNotes: "Build up gradually" }
+      ];
+    }
+    
+    if (name.includes('strength')) {
+      return [
+        { name: "Squats", description: "Fundamental lower body exercise targeting glutes and quadriceps", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Glutes, quadriceps", secondaryMuscles: "Core, calves", category: "strength", caloriesPerMinute: 5, modifications: "Chair-assisted", safetyNotes: "Keep knees behind toes" },
+        { name: "Push-ups", description: "Upper body exercise targeting chest, shoulders, and triceps", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Chest, shoulders, triceps", secondaryMuscles: "Core", category: "strength", caloriesPerMinute: 6, modifications: "Knee push-ups", safetyNotes: "Maintain straight line" },
+        { name: "Lunges", description: "Unilateral leg exercise for strength and balance", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Glutes, quadriceps", secondaryMuscles: "Hamstrings, calves", category: "strength", caloriesPerMinute: 6, modifications: "Stationary lunges", safetyNotes: "Keep front knee over ankle" },
+        { name: "Plank", description: "Isometric core exercise in push-up position", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Core", secondaryMuscles: "Shoulders, glutes", category: "strength", caloriesPerMinute: 4, modifications: "Knee plank", safetyNotes: "Keep body straight" },
+        { name: "Dumbbell Rows", description: "Back strengthening exercise using pulling motion", difficultyLevel: "Intermediate", equipmentNeeded: "Dumbbells", primaryMuscles: "Back", secondaryMuscles: "Biceps, core", category: "strength", caloriesPerMinute: 5, modifications: "Lighter weights", safetyNotes: "Keep back straight" },
+        { name: "Overhead Press", description: "Shoulder exercise pressing weight above head", difficultyLevel: "Intermediate", equipmentNeeded: "Dumbbells", primaryMuscles: "Shoulders", secondaryMuscles: "Core, triceps", category: "strength", caloriesPerMinute: 5, modifications: "Seated press", safetyNotes: "Don't arch back" },
+        { name: "Romanian Deadlifts", description: "Hip-hinge movement targeting posterior chain", difficultyLevel: "Intermediate", equipmentNeeded: "Dumbbells", primaryMuscles: "Hamstrings, glutes", secondaryMuscles: "Back, core", category: "strength", caloriesPerMinute: 6, modifications: "Bodyweight", safetyNotes: "Keep chest up" },
+        { name: "Bicep Curls", description: "Isolation exercise for bicep muscle development", difficultyLevel: "Beginner", equipmentNeeded: "Dumbbells", primaryMuscles: "Biceps", secondaryMuscles: "Forearms", category: "strength", caloriesPerMinute: 3, modifications: "Lighter weights", safetyNotes: "Control the negative" },
+        { name: "Tricep Dips", description: "Bodyweight exercise targeting tricep muscles", difficultyLevel: "Intermediate", equipmentNeeded: "Chair or bench", primaryMuscles: "Triceps", secondaryMuscles: "Shoulders", category: "strength", caloriesPerMinute: 4, modifications: "Feet on ground", safetyNotes: "Don't go too low" },
+        { name: "Calf Raises", description: "Lower leg exercise for calf muscle development", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Calves", secondaryMuscles: "Ankles", category: "strength", caloriesPerMinute: 3, modifications: "Hold wall", safetyNotes: "Full range of motion" }
+      ];
+    }
+    
+    if (name.includes('barre')) {
+      return [
+        { name: "Pliés", description: "Ballet-inspired squat variation with turned-out legs", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Glutes, inner thighs", secondaryMuscles: "Calves", category: "strength", caloriesPerMinute: 4, modifications: "Hold barre", safetyNotes: "Keep knees over toes" },
+        { name: "Relevés", description: "Calf raises in ballet first position for strength and grace", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Calves", secondaryMuscles: "Core", category: "strength", caloriesPerMinute: 3, modifications: "Hold support", safetyNotes: "Rise slowly" },
+        { name: "Leg Lifts at Barre", description: "Standing leg extensions for glute and hip strength", difficultyLevel: "Intermediate", equipmentNeeded: "Barre or chair", primaryMuscles: "Glutes, hip flexors", secondaryMuscles: "Core", category: "strength", caloriesPerMinute: 4, modifications: "Lower height", safetyNotes: "Keep hips square" },
+        { name: "Thigh Dancing", description: "Small isometric movements in deep plié position", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Quadriceps, glutes", secondaryMuscles: "Inner thighs", category: "strength", caloriesPerMinute: 5, modifications: "Less depth", safetyNotes: "Don't bounce" },
+        { name: "Seat Work", description: "Glute-focused exercises in all-fours position", difficultyLevel: "Intermediate", equipmentNeeded: "Mat", primaryMuscles: "Glutes", secondaryMuscles: "Hamstrings, core", category: "strength", caloriesPerMinute: 4, modifications: "Lower range", safetyNotes: "Keep hips level" },
+        { name: "Port de Bras", description: "Flowing arm movements for upper body and posture", difficultyLevel: "Beginner", equipmentNeeded: "Light weights", primaryMuscles: "Arms, shoulders", secondaryMuscles: "Core, back", category: "strength", caloriesPerMinute: 3, modifications: "No weights", safetyNotes: "Move with control" },
+        { name: "Pretzel", description: "Targeted glute exercise in side-lying position", difficultyLevel: "Advanced", equipmentNeeded: "Mat", primaryMuscles: "Glutes", secondaryMuscles: "Hip flexors, core", category: "strength", caloriesPerMinute: 4, modifications: "Smaller movements", safetyNotes: "Don't roll forward" },
+        { name: "Core Burner", description: "Intense abdominal sequence with small movements", difficultyLevel: "Advanced", equipmentNeeded: "Mat", primaryMuscles: "Core", secondaryMuscles: "Hip flexors", category: "strength", caloriesPerMinute: 5, modifications: "Larger movements", safetyNotes: "Don't pull neck" },
+        { name: "Balance Challenge", description: "Single-leg exercises for stability and strength", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Legs, core", secondaryMuscles: "Ankles", category: "balance", caloriesPerMinute: 4, modifications: "Hold support", safetyNotes: "Engage core" },
+        { name: "Final Stretch", description: "Flexibility sequence to lengthen worked muscles", difficultyLevel: "Beginner", equipmentNeeded: "Mat", primaryMuscles: "Full body", secondaryMuscles: "None", category: "flexibility", caloriesPerMinute: 2, modifications: "Less depth", safetyNotes: "Breathe deeply" }
+      ];
+    }
+    
+    if (name.includes('spinning') || name.includes('cycling')) {
+      return [
+        { name: "Warm-up Ride", description: "Gentle cycling to prepare muscles and joints", difficultyLevel: "Beginner", equipmentNeeded: "Spin bike", primaryMuscles: "Legs", secondaryMuscles: "Core", category: "cardio", caloriesPerMinute: 6, modifications: "Lower resistance", safetyNotes: "Proper bike setup essential" },
+        { name: "Seated Climb", description: "Increased resistance simulation of uphill cycling", difficultyLevel: "Intermediate", equipmentNeeded: "Spin bike", primaryMuscles: "Glutes, quadriceps", secondaryMuscles: "Core, calves", category: "cardio", caloriesPerMinute: 9, modifications: "Moderate resistance", safetyNotes: "Maintain cadence" },
+        { name: "Standing Climb", description: "Out-of-saddle riding for maximum power output", difficultyLevel: "Advanced", equipmentNeeded: "Spin bike", primaryMuscles: "Glutes, quadriceps", secondaryMuscles: "Core, arms", category: "cardio", caloriesPerMinute: 12, modifications: "Seated option", safetyNotes: "Core engagement crucial" },
+        { name: "Sprint Intervals", description: "High-intensity short bursts at maximum effort", difficultyLevel: "Advanced", equipmentNeeded: "Spin bike", primaryMuscles: "Legs", secondaryMuscles: "Core, cardiovascular", category: "cardio", caloriesPerMinute: 15, modifications: "Longer intervals", safetyNotes: "Proper recovery essential" },
+        { name: "Jumps", description: "Alternating between seated and standing positions", difficultyLevel: "Intermediate", equipmentNeeded: "Spin bike", primaryMuscles: "Legs, core", secondaryMuscles: "Arms", category: "cardio", caloriesPerMinute: 10, modifications: "Slower transitions", safetyNotes: "Smooth transitions" },
+        { name: "Isolations", description: "Single-leg focused work for muscle imbalance correction", difficultyLevel: "Intermediate", equipmentNeeded: "Spin bike", primaryMuscles: "Individual leg muscles", secondaryMuscles: "Core", category: "strength", caloriesPerMinute: 7, modifications: "Both legs", safetyNotes: "Equal work both sides" },
+        { name: "Recovery Spin", description: "Easy-paced cycling for active recovery", difficultyLevel: "Beginner", equipmentNeeded: "Spin bike", primaryMuscles: "Legs", secondaryMuscles: "Cardiovascular", category: "cardio", caloriesPerMinute: 5, modifications: "Even slower", safetyNotes: "Focus on form" },
+        { name: "Tabata Cycling", description: "4-minute high-intensity protocol with specific timing", difficultyLevel: "Advanced", equipmentNeeded: "Spin bike", primaryMuscles: "Legs", secondaryMuscles: "Cardiovascular", category: "cardio", caloriesPerMinute: 14, modifications: "Longer work periods", safetyNotes: "All-out effort required" },
+        { name: "Endurance Ride", description: "Sustained moderate effort for cardiovascular fitness", difficultyLevel: "Intermediate", equipmentNeeded: "Spin bike", primaryMuscles: "Legs", secondaryMuscles: "Core, cardiovascular", category: "cardio", caloriesPerMinute: 8, modifications: "Shorter duration", safetyNotes: "Pace yourself" },
+        { name: "Cool-down Spin", description: "Gentle cycling to gradually lower heart rate", difficultyLevel: "Beginner", equipmentNeeded: "Spin bike", primaryMuscles: "Legs", secondaryMuscles: "None", category: "cardio", caloriesPerMinute: 4, modifications: "Even gentler", safetyNotes: "Gradual reduction" }
+      ];
+    }
+    
+    if (name.includes('kickboxing')) {
+      return [
+        { name: "Jab-Cross Combo", description: "Basic boxing combination with lead and rear hand punches", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Arms, shoulders", secondaryMuscles: "Core, legs", category: "cardio", caloriesPerMinute: 8, modifications: "Slower pace", safetyNotes: "Keep guard up" },
+        { name: "Front Kicks", description: "Straight kick using ball of foot to target", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Legs, core", secondaryMuscles: "Hip flexors", category: "cardio", caloriesPerMinute: 9, modifications: "Knee lifts", safetyNotes: "Pull toes back" },
+        { name: "Roundhouse Kicks", description: "Circular kick using shin or instep", difficultyLevel: "Advanced", equipmentNeeded: "None", primaryMuscles: "Legs, core", secondaryMuscles: "Glutes, obliques", category: "cardio", caloriesPerMinute: 10, modifications: "Low kicks", safetyNotes: "Turn hips over" },
+        { name: "Hook Punches", description: "Circular punch targeting side of opponent", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Arms, shoulders", secondaryMuscles: "Core, obliques", category: "cardio", caloriesPerMinute: 8, modifications: "Body punches", safetyNotes: "Rotate from core" },
+        { name: "Knee Strikes", description: "Close-range strikes using knee joint", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Hip flexors, core", secondaryMuscles: "Legs, glutes", category: "cardio", caloriesPerMinute: 9, modifications: "Standing knees", safetyNotes: "Drive knee up" },
+        { name: "Duck and Weave", description: "Defensive movement to avoid punches", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Legs, core", secondaryMuscles: "Back", category: "cardio", caloriesPerMinute: 7, modifications: "Slower movement", safetyNotes: "Keep eyes on target" },
+        { name: "Side Kicks", description: "Lateral kick using heel or blade of foot", difficultyLevel: "Advanced", equipmentNeeded: "None", primaryMuscles: "Legs, obliques", secondaryMuscles: "Core, glutes", category: "cardio", caloriesPerMinute: 9, modifications: "Standing leg lifts", safetyNotes: "Turn supporting foot" },
+        { name: "Boxing Footwork", description: "Movement patterns for positioning and mobility", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Legs, calves", secondaryMuscles: "Core", category: "cardio", caloriesPerMinute: 6, modifications: "Slower steps", safetyNotes: "Stay on balls of feet" },
+        { name: "Combination Drills", description: "Flowing sequences combining punches and kicks", difficultyLevel: "Advanced", equipmentNeeded: "None", primaryMuscles: "Full body", secondaryMuscles: "Cardiovascular", category: "cardio", caloriesPerMinute: 11, modifications: "Simpler combos", safetyNotes: "Focus on form" },
+        { name: "Heavy Bag Work", description: "Practicing techniques on heavy training bag", difficultyLevel: "Intermediate", equipmentNeeded: "Heavy bag, gloves", primaryMuscles: "Full body", secondaryMuscles: "Cardiovascular", category: "cardio", caloriesPerMinute: 10, modifications: "Pad work", safetyNotes: "Proper hand protection" }
+      ];
+    }
+    
+    if (name.includes('zumba')) {
+      return [
+        { name: "Salsa Steps", description: "Basic salsa footwork adapted for fitness", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Legs, calves", secondaryMuscles: "Core", category: "cardio", caloriesPerMinute: 7, modifications: "Step touch", safetyNotes: "Stay light on feet" },
+        { name: "Merengue March", description: "Simple marching steps with hip movement", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Legs, glutes", secondaryMuscles: "Core, hips", category: "cardio", caloriesPerMinute: 6, modifications: "In place", safetyNotes: "Let hips move naturally" },
+        { name: "Reggaeton Bounce", description: "Urban dance move with knee bouncing", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Legs, glutes", secondaryMuscles: "Core, hips", category: "cardio", caloriesPerMinute: 8, modifications: "Smaller bounces", safetyNotes: "Bend knees" },
+        { name: "Cumbia Steps", description: "Colombian dance with side-to-side movement", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Legs, hips", secondaryMuscles: "Core, arms", category: "cardio", caloriesPerMinute: 7, modifications: "Step touch", safetyNotes: "Follow the rhythm" },
+        { name: "Belly Dance Moves", description: "Isolated hip and torso movements", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Core, hips", secondaryMuscles: "Back, glutes", category: "cardio", caloriesPerMinute: 5, modifications: "Smaller movements", safetyNotes: "Focus on isolation" },
+        { name: "Cha Cha Cha", description: "Triple step ballroom dance movement", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Legs, calves", secondaryMuscles: "Core", category: "cardio", caloriesPerMinute: 6, modifications: "Walking steps", safetyNotes: "Quick-quick-slow rhythm" },
+        { name: "Bollywood Arms", description: "Expressive arm movements from Indian dance", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Arms, shoulders", secondaryMuscles: "Core, back", category: "cardio", caloriesPerMinute: 4, modifications: "Smaller range", safetyNotes: "Graceful movements" },
+        { name: "Samba Bounce", description: "Brazilian dance with bouncing knee action", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Legs, glutes", secondaryMuscles: "Core, calves", category: "cardio", caloriesPerMinute: 8, modifications: "Less bounce", safetyNotes: "Continuous knee bend" },
+        { name: "Hip Hop Moves", description: "Urban street dance with attitude", difficultyLevel: "Intermediate", equipmentNeeded: "None", primaryMuscles: "Full body", secondaryMuscles: "Core", category: "cardio", caloriesPerMinute: 8, modifications: "Simpler moves", safetyNotes: "Express yourself" },
+        { name: "Cool Down Stretch", description: "Gentle stretching with Latin music", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Full body", secondaryMuscles: "None", category: "flexibility", caloriesPerMinute: 3, modifications: "Deeper stretches", safetyNotes: "Breathe and relax" }
+      ];
+    }
+    
+    if (name.includes('aqua') || name.includes('water')) {
+      return [
+        { name: "Water Walking", description: "Forward and backward walking in chest-deep water", difficultyLevel: "Beginner", equipmentNeeded: "Pool", primaryMuscles: "Legs", secondaryMuscles: "Core, arms", category: "cardio", caloriesPerMinute: 5, modifications: "Shallow water", safetyNotes: "Use water buoyancy" },
+        { name: "Aqua Jogging", description: "Running motion in deep water with flotation", difficultyLevel: "Intermediate", equipmentNeeded: "Pool, flotation belt", primaryMuscles: "Legs, core", secondaryMuscles: "Arms", category: "cardio", caloriesPerMinute: 8, modifications: "Slower pace", safetyNotes: "Maintain good form" },
+        { name: "Water Jumping Jacks", description: "Classic exercise adapted for water resistance", difficultyLevel: "Beginner", equipmentNeeded: "Pool", primaryMuscles: "Full body", secondaryMuscles: "Core", category: "cardio", caloriesPerMinute: 6, modifications: "Arms only", safetyNotes: "Use water resistance" },
+        { name: "Pool Push-ups", description: "Push-ups using pool edge for upper body strength", difficultyLevel: "Intermediate", equipmentNeeded: "Pool edge", primaryMuscles: "Chest, arms", secondaryMuscles: "Core", category: "strength", caloriesPerMinute: 4, modifications: "Inclined position", safetyNotes: "Secure hand placement" },
+        { name: "Water Kicks", description: "Leg kicks in various directions for strength", difficultyLevel: "Beginner", equipmentNeeded: "Pool", primaryMuscles: "Legs, glutes", secondaryMuscles: "Core", category: "strength", caloriesPerMinute: 4, modifications: "Hold pool edge", safetyNotes: "Controlled movements" },
+        { name: "Cross-Country Skiing", description: "Skiing motion adapted for water exercise", difficultyLevel: "Intermediate", equipmentNeeded: "Pool", primaryMuscles: "Full body", secondaryMuscles: "Core", category: "cardio", caloriesPerMinute: 7, modifications: "Smaller range", safetyNotes: "Opposite arm/leg" },
+        { name: "Water Squats", description: "Squat exercise with water resistance and buoyancy", difficultyLevel: "Beginner", equipmentNeeded: "Pool", primaryMuscles: "Glutes, legs", secondaryMuscles: "Core", category: "strength", caloriesPerMinute: 5, modifications: "Shallow squats", safetyNotes: "Full range of motion" },
+        { name: "Arm Circles", description: "Large arm circles against water resistance", difficultyLevel: "Beginner", equipmentNeeded: "Pool", primaryMuscles: "Shoulders, arms", secondaryMuscles: "Core", category: "strength", caloriesPerMinute: 3, modifications: "Smaller circles", safetyNotes: "Both directions" },
+        { name: "Flutter Kicks", description: "Rapid alternating leg kicks holding pool edge", difficultyLevel: "Intermediate", equipmentNeeded: "Pool edge", primaryMuscles: "Legs, core", secondaryMuscles: "Hip flexors", category: "cardio", caloriesPerMinute: 6, modifications: "Slower kicks", safetyNotes: "Keep legs straight" },
+        { name: "Water Planks", description: "Plank position using water buoyancy and noodles", difficultyLevel: "Intermediate", equipmentNeeded: "Pool noodles", primaryMuscles: "Core", secondaryMuscles: "Shoulders", category: "strength", caloriesPerMinute: 4, modifications: "Shorter holds", safetyNotes: "Maintain straight line" }
+      ];
+    }
+    
+    // Default exercises for any other class type  
     return [
-      {
-        name: "Basic Warm-up",
-        description: "Light movement to prepare the body for exercise",
-        difficultyLevel: "Beginner",
-        equipmentNeeded: "None",
-        primaryMuscles: "Full body",
-        secondaryMuscles: "Core",
-        category: "cardio",
-        caloriesPerMinute: 3,
-        modifications: "Adjust intensity as needed",
-        safetyNotes: "Start slowly and gradually increase intensity"
-      },
-      {
-        name: "Cool-down Stretch",
-        description: "Gentle stretching to help muscles recover",
-        difficultyLevel: "Beginner",
-        equipmentNeeded: "None",
-        primaryMuscles: "Full body",
-        secondaryMuscles: "Core",
-        category: "flexibility",
-        caloriesPerMinute: 2,
-        modifications: "Hold stretches as comfortable",
-        safetyNotes: "Never bounce while stretching"
-      }
+      { name: "Basic Warm-up", description: "Light movement to prepare the body for exercise", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Full body", secondaryMuscles: "Core", category: "cardio", caloriesPerMinute: 3, modifications: "Adjust intensity as needed", safetyNotes: "Start slowly" },
+      { name: "Cool-down Stretch", description: "Gentle stretching to help muscles recover", difficultyLevel: "Beginner", equipmentNeeded: "None", primaryMuscles: "Full body", secondaryMuscles: "Core", category: "flexibility", caloriesPerMinute: 2, modifications: "Hold stretches as comfortable", safetyNotes: "Never bounce while stretching" }
     ];
   }
 
