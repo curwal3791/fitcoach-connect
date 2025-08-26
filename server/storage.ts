@@ -1825,6 +1825,7 @@ export class DatabaseStorage implements IStorage {
   }> {
     const report: string[] = [];
     let duplicatesRemoved = 0;
+    let duplicatesFound = 0;
     
     try {
       // Find duplicate class types by name
@@ -1838,32 +1839,33 @@ export class DatabaseStorage implements IStorage {
         .groupBy(classTypes.name)
         .having(sql`count(*) > 1`);
       
-      report.push(`Found ${duplicateGroups.length} class types with duplicates`);
+      duplicatesFound = duplicateGroups.length;
+      report.push(`Found ${duplicatesFound} class types with duplicates`);
       
       for (const group of duplicateGroups) {
         const [keepId, ...duplicateIds] = group.ids;
         report.push(`Processing ${group.name}: keeping ${keepId}, removing ${duplicateIds.length} duplicates`);
         
         // Move exercises from duplicates to the keeper
-        const exercisesUpdated = await db
+        await db
           .update(exercises)
           .set({ classTypeId: keepId })
           .where(sql`${exercises.classTypeId} = ANY(${duplicateIds})`);
         
         // Move calendar events from duplicates to the keeper  
-        const eventsUpdated = await db
+        await db
           .update(calendarEvents)
           .set({ classTypeId: keepId })
           .where(sql`${calendarEvents.classTypeId} = ANY(${duplicateIds})`);
         
         // Move routines from duplicates to the keeper
-        const routinesUpdated = await db
+        await db
           .update(routines)
           .set({ classTypeId: keepId })
           .where(sql`${routines.classTypeId} = ANY(${duplicateIds})`);
         
         // Move programs from duplicates to the keeper
-        const programsUpdated = await db
+        await db
           .update(programs)
           .set({ classTypeId: keepId })
           .where(sql`${programs.classTypeId} = ANY(${duplicateIds})`);
@@ -1886,7 +1888,7 @@ export class DatabaseStorage implements IStorage {
     
     return {
       report,
-      duplicatesFound: duplicateGroups.length,
+      duplicatesFound,
       duplicatesRemoved
     };
   }
