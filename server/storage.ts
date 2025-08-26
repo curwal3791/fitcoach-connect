@@ -1375,7 +1375,7 @@ export class DatabaseStorage implements IStorage {
 
     return result.map(row => ({
       ...row.program,
-      classType: row.classType,
+      classType: row.classType || undefined,
       enrollmentCount: row.enrollmentCount,
     }));
   }
@@ -1406,10 +1406,10 @@ export class DatabaseStorage implements IStorage {
 
     return {
       ...program.programs,
-      classType: program.class_types,
+      classType: program.class_types || undefined,
       sessions: sessions.map(session => ({
         ...session.program_sessions,
-        routine: session.routines,
+        routine: session.routines || undefined,
       })),
     };
   }
@@ -1443,7 +1443,7 @@ export class DatabaseStorage implements IStorage {
 
     return sessions.map(session => ({
       ...session.program_sessions,
-      routine: session.routines,
+      routine: session.routines || undefined,
     }));
   }
 
@@ -1480,7 +1480,6 @@ export class DatabaseStorage implements IStorage {
         
         const event = await db.insert(calendarEvents).values({
           title: `${program.name} - ${session.sessionName || 'Session'}`,
-          description: `Week ${week} - Auto-generated from program`,
           startDatetime: eventDate,
           endDatetime: new Date(eventDate.getTime() + 60 * 60 * 1000), // 1 hour default
           userId: program.createdBy,
@@ -1496,7 +1495,7 @@ export class DatabaseStorage implements IStorage {
           const targets = routineExercises.map(re => ({
             eventId: event[0].id,
             routineExerciseId: re.id,
-            targets: session.baseParams,
+            targets: session.baseParams as any,
             isGenerated: true,
           }));
           await this.createEventTargets(targets);
@@ -1520,8 +1519,8 @@ export class DatabaseStorage implements IStorage {
 
     return enrollments.map(enrollment => ({
       ...enrollment.program_enrollments,
-      client: enrollment.clients,
-      classType: enrollment.class_types,
+      client: enrollment.clients || undefined,
+      classType: enrollment.class_types || undefined,
     }));
   }
 
@@ -1577,22 +1576,23 @@ export class DatabaseStorage implements IStorage {
 
   // Readiness Check operations
   async getClientReadiness(clientId: string, date?: Date): Promise<ReadinessCheck[]> {
-    let query = db.select().from(readinessChecks).where(eq(readinessChecks.clientId, clientId));
-    
     if (date) {
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
       
-      query = query.where(and(
+      return await db.select().from(readinessChecks).where(and(
         eq(readinessChecks.clientId, clientId),
         sql`${readinessChecks.date} >= ${startOfDay}`,
         sql`${readinessChecks.date} <= ${endOfDay}`
-      ));
+      )).orderBy(desc(readinessChecks.date));
     }
 
-    return await query.orderBy(desc(readinessChecks.date));
+    
+    return await db.select().from(readinessChecks)
+      .where(eq(readinessChecks.clientId, clientId))
+      .orderBy(desc(readinessChecks.date));
   }
 
   async createReadinessCheck(check: InsertReadinessCheck): Promise<ReadinessCheck> {
@@ -1625,10 +1625,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(performanceRecords.eventId, eventId));
 
     if (clientId) {
-      query = query.where(and(
-        eq(performanceRecords.eventId, eventId),
-        eq(performanceRecords.clientId, clientId)
-      ));
+      const records = await db
+        .select()
+        .from(performanceRecords)
+        .innerJoin(exercises, eq(performanceRecords.exerciseId, exercises.id))
+        .where(and(
+          eq(performanceRecords.eventId, eventId),
+          eq(performanceRecords.clientId, clientId)
+        ));
+      
+      return records.map(record => ({
+        ...record.performance_records,
+        exercise: record.exercises,
+      }));
     }
 
     const records = await query;
@@ -1658,7 +1667,7 @@ export class DatabaseStorage implements IStorage {
       const exerciseRecords = performanceRecords.filter(r => r.exerciseId === target.routineExercise!.exerciseId);
       if (exerciseRecords.length === 0) continue;
 
-      const avgRpe = exerciseRecords.reduce((sum, r) => sum + (r.actual?.rpe || 5), 0) / exerciseRecords.length;
+      const avgRpe = exerciseRecords.reduce((sum, r) => sum + ((r.actual as any)?.rpe || 5), 0) / exerciseRecords.length;
       const currentTargets = target.targets as any || {};
 
       // Apply progression based on RPE
