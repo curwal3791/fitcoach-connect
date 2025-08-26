@@ -125,6 +125,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cleanup duplicate class types endpoint
+  app.post('/api/cleanup-duplicate-class-types', async (req, res) => {
+    try {
+      console.log("Starting duplicate class types cleanup...");
+      
+      const result = await storage.cleanupDuplicateClassTypes();
+      
+      console.log("Cleanup completed:", result);
+      
+      res.json({
+        message: "Duplicate class types cleanup completed",
+        duplicatesFound: result.duplicatesFound,
+        duplicatesRemoved: result.duplicatesRemoved,
+        report: result.report
+      });
+    } catch (error) {
+      console.error("Error in cleanup:", error);
+      res.status(500).json({ message: "Failed to cleanup duplicates" });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

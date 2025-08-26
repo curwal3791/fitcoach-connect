@@ -1816,6 +1816,80 @@ export class DatabaseStorage implements IStorage {
     const allUsers = await db.select().from(users);
     return allUsers;
   }
+
+  // Cleanup duplicate class types
+  async cleanupDuplicateClassTypes(): Promise<{ 
+    report: string[], 
+    duplicatesFound: number, 
+    duplicatesRemoved: number 
+  }> {
+    const report: string[] = [];
+    let duplicatesRemoved = 0;
+    
+    try {
+      // Find duplicate class types by name
+      const duplicateGroups = await db
+        .select({
+          name: classTypes.name,
+          ids: sql<string[]>`array_agg(${classTypes.id} ORDER BY ${classTypes.createdAt})`,
+          count: sql<number>`count(*)::int`
+        })
+        .from(classTypes)
+        .groupBy(classTypes.name)
+        .having(sql`count(*) > 1`);
+      
+      report.push(`Found ${duplicateGroups.length} class types with duplicates`);
+      
+      for (const group of duplicateGroups) {
+        const [keepId, ...duplicateIds] = group.ids;
+        report.push(`Processing ${group.name}: keeping ${keepId}, removing ${duplicateIds.length} duplicates`);
+        
+        // Move exercises from duplicates to the keeper
+        const exercisesUpdated = await db
+          .update(exercises)
+          .set({ classTypeId: keepId })
+          .where(sql`${exercises.classTypeId} = ANY(${duplicateIds})`);
+        
+        // Move calendar events from duplicates to the keeper  
+        const eventsUpdated = await db
+          .update(calendarEvents)
+          .set({ classTypeId: keepId })
+          .where(sql`${calendarEvents.classTypeId} = ANY(${duplicateIds})`);
+        
+        // Move routines from duplicates to the keeper
+        const routinesUpdated = await db
+          .update(routines)
+          .set({ classTypeId: keepId })
+          .where(sql`${routines.classTypeId} = ANY(${duplicateIds})`);
+        
+        // Move programs from duplicates to the keeper
+        const programsUpdated = await db
+          .update(programs)
+          .set({ classTypeId: keepId })
+          .where(sql`${programs.classTypeId} = ANY(${duplicateIds})`);
+        
+        // Delete the duplicate class types
+        await db
+          .delete(classTypes)
+          .where(sql`${classTypes.id} = ANY(${duplicateIds})`);
+        
+        duplicatesRemoved += duplicateIds.length;
+        report.push(`- Consolidated ${group.name}: moved data and removed ${duplicateIds.length} duplicates`);
+      }
+      
+      report.push(`✅ Cleanup completed! Removed ${duplicatesRemoved} duplicate class types`);
+      
+    } catch (error) {
+      report.push(`❌ Error during cleanup: ${error}`);
+      console.error('Cleanup error:', error);
+    }
+    
+    return {
+      report,
+      duplicatesFound: duplicateGroups.length,
+      duplicatesRemoved
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();
