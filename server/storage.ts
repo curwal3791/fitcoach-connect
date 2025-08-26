@@ -1680,17 +1680,21 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log(`Starting default data seeding for user: ${userId}`);
       
-      // Check if user already has class types to avoid duplicate seeding
+      // Get existing class types
       const existingClassTypes = await this.getClassTypes(userId);
       console.log(`Found ${existingClassTypes.length} existing class types for user: ${userId}`);
       
-      if (existingClassTypes.length >= 10) {
-        console.log(`User ${userId} already has ${existingClassTypes.length} class types, skipping seeding`);
-        return; // Already seeded with complete set
+      // First, remove any exercises that don't have a class type assigned
+      const orphanedExercises = await this.getExercises({ userId });
+      let orphanedCount = 0;
+      for (const exercise of orphanedExercises) {
+        if (!exercise.classType) {
+          await this.deleteExercise(exercise.id);
+          orphanedCount++;
+        }
       }
-      
-      if (existingClassTypes.length > 0) {
-        console.log(`User ${userId} has ${existingClassTypes.length} class types but missing defaults, will add missing ones`);
+      if (orphanedCount > 0) {
+        console.log(`Removed ${orphanedCount} orphaned exercises without class types for user: ${userId}`);
       }
 
     // Define the top 10 popular class types
@@ -1772,14 +1776,32 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    // Create exercises for all class types (can be done in background)
-    console.log(`Creating exercises for ${createdClassTypes.length} class types`);
+    // Create exercises for newly created class types
+    console.log(`Creating exercises for ${createdClassTypes.length} newly created class types`);
     for (const classType of createdClassTypes) {
       try {
         await this.createDefaultExercisesForClass(classType, userId);
         console.log(`Created default exercises for class type: ${classType.name}`);
       } catch (error) {
         console.error(`Error creating exercises for ${classType.name}:`, error);
+      }
+    }
+    
+    // Now ensure ALL class types (existing + new) have exercises
+    const allUserClassTypes = await this.getClassTypes(userId);
+    console.log(`Ensuring exercises exist for all ${allUserClassTypes.length} class types`);
+    
+    for (const classType of allUserClassTypes) {
+      try {
+        const existingExercises = await this.getExercises({ classType: classType.id, userId });
+        if (existingExercises.length === 0) {
+          console.log(`Creating missing exercises for class type: ${classType.name} (user: ${userId})`);
+          await this.createDefaultExercisesForClass(classType, userId);
+        } else {
+          console.log(`Class type ${classType.name} already has ${existingExercises.length} exercises`);
+        }
+      } catch (error) {
+        console.error(`Error ensuring exercises for ${classType.name}:`, error);
       }
     }
     
