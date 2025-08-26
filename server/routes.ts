@@ -819,7 +819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Coach Console Routes - Event-aware session management
-  app.get("/api/events/:eventId/console", isAuthenticated, async (req, res) => {
+  app.get("/api/events/:eventId/console", isAuthenticated, async (req: any, res) => {
     try {
       const { eventId } = req.params;
       const userId = req.user.id;
@@ -838,7 +838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/events/:eventId/start", isAuthenticated, async (req, res) => {
+  app.post("/api/events/:eventId/start", isAuthenticated, async (req: any, res) => {
     try {
       const { eventId } = req.params;
       const userId = req.user.id;
@@ -851,7 +851,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/events/:eventId/complete", isAuthenticated, async (req, res) => {
+  app.post("/api/events/:eventId/complete", isAuthenticated, async (req: any, res) => {
     try {
       const { eventId } = req.params;
       const { sessionNotes } = req.body;
@@ -1223,7 +1223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let duplicatesRemoved = 0;
       
       // For each group, keep the first one and delete the rest
-      for (const [name, exercises] of exercisesByName.entries()) {
+      for (const [name, exercises] of Array.from(exercisesByName.entries())) {
         if (exercises.length > 1) {
           console.log(`[CLEANUP] Found ${exercises.length} duplicates of "${exercises[0].name}"`);
           
@@ -1246,11 +1246,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalExercises: remainingExercises.length,
         timestamp: new Date().toISOString()
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[CLEANUP] Error:', error);
       res.status(500).json({ 
         success: false,
-        error: error.message, 
+        error: error instanceof Error ? error.message : 'Unknown error', 
         timestamp: new Date().toISOString()
       });
     }
@@ -1307,7 +1307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('[RESEED] Error:', error);
       res.status(500).json({ 
         success: false, 
-        error: error.message, 
+        error: error instanceof Error ? error.message : 'Unknown error', 
         timestamp: new Date().toISOString() 
       });
     }
