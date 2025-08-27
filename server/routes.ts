@@ -130,6 +130,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Starting duplicate class types cleanup...");
       
+      // Set explicit headers to ensure JSON response
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache');
+      
       const result = await storage.cleanupDuplicateClassTypes();
       
       console.log("Cleanup completed:", result);
