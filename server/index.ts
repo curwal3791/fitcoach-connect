@@ -37,6 +37,13 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Add a priority middleware for API routes to ensure they take precedence
+  app.use('/api/*', (req, res, next) => {
+    // Ensure proper handling of API requests before Vite middleware
+    console.log(`[API] Handling ${req.method} ${req.path}`);
+    next();
+  });
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
