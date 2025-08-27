@@ -155,6 +155,28 @@ export default function Dashboard() {
     },
   });
 
+  // Cleanup duplicate class types mutation
+  const cleanupMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("/api/cleanup-duplicate-class-types", "POST");
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/class-types"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({
+        title: "Cleanup Complete",
+        description: `Found ${data.duplicatesFound} duplicates, removed ${data.duplicatesRemoved}`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Cleanup Failed",
+        description: "Failed to cleanup duplicate class types. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Get upcoming 5 events
   const upcomingEvents = allEvents
     ?.filter(event => new Date(event.startDatetime) >= new Date())
@@ -490,6 +512,16 @@ export default function Dashboard() {
               >
                 <Zap className="w-4 h-4 mr-2" />
                 Quick Workout
+              </Button>
+              <Button
+                onClick={() => cleanupMutation.mutate()}
+                variant="outline"
+                className="w-full justify-start"
+                disabled={cleanupMutation.isPending}
+                data-testid="button-cleanup-duplicates"
+              >
+                <ListCheck className="w-4 h-4 mr-2" />
+                {cleanupMutation.isPending ? "Cleaning..." : "Cleanup Data"}
               </Button>
             </CardContent>
           </Card>
