@@ -118,7 +118,10 @@ export default function Dashboard() {
   // Create routine mutation
   const createRoutineMutation = useMutation({
     mutationFn: async (routineData: { name: string; description?: string; classTypeId?: string }) => {
-      return await apiRequest("/api/routines", "POST", routineData);
+      return await apiRequest("/api/routines", {
+        method: "POST",
+        body: JSON.stringify(routineData),
+      });
     },
     onSuccess: (newRoutine) => {
       queryClient.invalidateQueries({ queryKey: ["/api/routines"] });
@@ -158,7 +161,9 @@ export default function Dashboard() {
   // Cleanup duplicate class types mutation
   const cleanupMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("/api/cleanup-duplicate-class-types", "POST");
+      return await apiRequest("/api/cleanup-duplicate-class-types", {
+        method: "POST",
+      });
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/class-types"] });
@@ -400,18 +405,12 @@ export default function Dashboard() {
                             <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
                               <span className="flex items-center">
                                 <Calendar className="w-4 h-4 mr-1" />
-                                {new Date(event.startTime).toLocaleDateString()}
+                                {new Date(event.startDatetime).toLocaleDateString()}
                               </span>
                               <span className="flex items-center">
                                 <Clock className="w-4 h-4 mr-1" />
-                                {new Date(event.startTime).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+                                {new Date(event.startDatetime).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
                               </span>
-                              {event.duration && (
-                                <span className="flex items-center">
-                                  <Timer className="w-4 h-4 mr-1" />
-                                  {event.duration}min
-                                </span>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -421,7 +420,7 @@ export default function Dashboard() {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setLocation(`/presentation/${event.routineId}`);
+                              setLocation(`/presentation`);
                             }}
                             data-testid={`present-${event.id}`}
                           >
