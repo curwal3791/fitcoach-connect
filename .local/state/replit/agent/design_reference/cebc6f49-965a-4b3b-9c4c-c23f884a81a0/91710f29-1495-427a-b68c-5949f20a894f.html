@@ -1,0 +1,890 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitFlow - Group Fitness Trainer Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    'inter': ['Inter', 'sans-serif'],
+                },
+                colors: {
+                    primary: {
+                        50: '#eff6ff',
+                        500: '#3b82f6',
+                        600: '#2563eb',
+                        700: '#1d4ed8',
+                    },
+                    fitness: {
+                        500: '#059669',
+                        600: '#047857',
+                    }
+                }
+            }
+        }
+    };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-inter">
+    <!-- @COMPONENT: App [main application container] -->
+    <div id="app" class="min-h-screen">
+        
+        <!-- LOGIN SCREEN -->
+        <!-- @COMPONENT: LoginPage [authentication interface] -->
+        <div id="loginScreen" class="min-h-screen bg-gradient-to-br from-blue-600 to-fitness-600 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-600 text-white rounded-xl mb-4">
+                        <i class="fas fa-dumbbell text-2xl"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">FitFlow</h1>
+                    <p class="text-gray-600">Professional fitness training platform</p>
+                </div>
+                
+                <form class="space-y-6" data-event="submit:handleLogin">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <input type="email" id="email" data-bind="user.email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="trainer@example.com" data-mock="true">
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" id="password" data-bind="user.password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="••••••••" data-mock="true">
+                    </div>
+                    <button type="submit" class="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-700 transition-colors focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+                        Sign In
+                    </button>
+                </form>
+                
+                <div class="mt-6 text-center">
+                    <a href="#" class="text-primary-600 hover:text-primary-700 text-sm font-medium">Forgot your password?</a>
+                </div>
+                
+                <div class="mt-8 text-center">
+                    <p class="text-gray-600 text-sm">Don't have an account? 
+                        <button data-event="click:showRegister" class="text-primary-600 hover:text-primary-700 font-medium">Sign up</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: LoginPage -->
+
+        <!-- MAIN APPLICATION -->
+        <!-- @COMPONENT: MainApp [authenticated application interface] -->
+        <div id="mainApp" class="hidden">
+            
+            <!-- NAVIGATION -->
+            <!-- @COMPONENT: NavigationBar [main navigation] -->
+            <nav class="bg-white shadow-sm border-b border-gray-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between items-center h-16">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 flex items-center">
+                                <i class="fas fa-dumbbell text-primary-600 text-xl mr-3"></i>
+                                <span class="text-xl font-bold text-gray-900">FitFlow</span>
+                            </div>
+                            <div class="hidden md:block ml-10">
+                                <div class="flex items-baseline space-x-4">
+                                    <button data-tab="dashboard" class="nav-tab active px-3 py-2 rounded-md text-sm font-medium bg-primary-50 text-primary-700">Dashboard</button>
+                                    <button data-tab="routines" class="nav-tab px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">Routines</button>
+                                    <button data-tab="exercises" class="nav-tab px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">Exercises</button>
+                                    <button data-tab="calendar" class="nav-tab px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">Calendar</button>
+                                    <button data-tab="presentation" class="nav-tab px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">Present</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <button class="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-bell"></i>
+                            </button>
+                            <div class="ml-3 relative">
+                                <button class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                    <img class="h-8 w-8 rounded-full" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=32&h=32" alt="Profile">
+                                    <!-- Professional fitness trainer headshot with friendly smile -->
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <!-- @END_COMPONENT: NavigationBar -->
+
+            <!-- DASHBOARD VIEW -->
+            <!-- @COMPONENT: Dashboard [main dashboard interface] -->
+            <div id="dashboardView" class="tab-content active">
+                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-bold text-gray-900">Welcome back, Sarah!</h1>
+                        <p class="text-gray-600 mt-1">Ready to create amazing workouts today?</p>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-lg bg-primary-50">
+                                    <i class="fas fa-list-check text-primary-600"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Routines</p>
+                                    <p class="text-2xl font-bold text-gray-900" data-bind="stats.totalRoutines">24</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-lg bg-fitness-50">
+                                    <i class="fas fa-calendar-week text-fitness-600"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">This Week</p>
+                                    <p class="text-2xl font-bold text-gray-900" data-bind="stats.weeklyClasses">12</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-lg bg-yellow-50">
+                                    <i class="fas fa-stopwatch text-yellow-600"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Avg Duration</p>
+                                    <p class="text-2xl font-bold text-gray-900" data-bind="stats.avgDuration">45m</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-lg bg-purple-50">
+                                    <i class="fas fa-users text-purple-600"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Class Types</p>
+                                    <p class="text-2xl font-bold text-gray-900" data-bind="stats.classTypes">8</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Recent Routines -->
+                        <div class="lg:col-span-2">
+                            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                                <div class="p-6 border-b border-gray-100">
+                                    <div class="flex items-center justify-between">
+                                        <h2 class="text-xl font-semibold text-gray-900">Recent Routines</h2>
+                                        <button data-event="click:createRoutine" class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+                                            <i class="fas fa-plus mr-2"></i>New Routine
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="p-6">
+                                    <!-- @MAP: routines.map(routine => ( -->
+                                    <div class="space-y-4">
+                                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" data-mock="true">
+                                            <div class="flex items-center">
+                                                <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mr-4">
+                                                    <i class="fas fa-fire text-primary-600"></i>
+                                                </div>
+                                                <div>
+                                                    <h3 class="font-semibold text-gray-900" data-bind="routine.name">HIIT Cardio Blast</h3>
+                                                    <p class="text-sm text-gray-600"><span data-bind="routine.duration">45 min</span> • <span data-bind="routine.exercises">12 exercises</span></p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <button class="p-2 text-gray-400 hover:text-primary-600">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-400 hover:text-gray-600">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" data-mock="true">
+                                            <div class="flex items-center">
+                                                <div class="w-12 h-12 bg-fitness-100 rounded-lg flex items-center justify-center mr-4">
+                                                    <i class="fas fa-leaf text-fitness-600"></i>
+                                                </div>
+                                                <div>
+                                                    <h3 class="font-semibold text-gray-900" data-bind="routine.name">Power Yoga Flow</h3>
+                                                    <p class="text-sm text-gray-600"><span data-bind="routine.duration">60 min</span> • <span data-bind="routine.exercises">18 exercises</span></p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <button class="p-2 text-gray-400 hover:text-primary-600">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-400 hover:text-gray-600">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" data-mock="true">
+                                            <div class="flex items-center">
+                                                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mr-4">
+                                                    <i class="fas fa-dumbbell text-red-600"></i>
+                                                </div>
+                                                <div>
+                                                    <h3 class="font-semibold text-gray-900" data-bind="routine.name">Strength & Conditioning</h3>
+                                                    <p class="text-sm text-gray-600"><span data-bind="routine.duration">50 min</span> • <span data-bind="routine.exercises">15 exercises</span></p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <button class="p-2 text-gray-400 hover:text-primary-600">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-400 hover:text-gray-600">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- @END_MAP )) -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Today's Schedule -->
+                        <div>
+                            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                                <div class="p-6 border-b border-gray-100">
+                                    <h2 class="text-xl font-semibold text-gray-900">Today's Schedule</h2>
+                                </div>
+                                <div class="p-6">
+                                    <!-- @MAP: todayClasses.map(class => ( -->
+                                    <div class="space-y-4">
+                                        <div class="border-l-4 border-primary-500 pl-4" data-mock="true">
+                                            <p class="text-sm font-medium text-primary-600" data-bind="class.time">9:00 AM</p>
+                                            <h4 class="font-semibold text-gray-900" data-bind="class.name">Morning HIIT</h4>
+                                            <p class="text-sm text-gray-600" data-bind="class.location">Studio A</p>
+                                        </div>
+                                        <div class="border-l-4 border-fitness-500 pl-4" data-mock="true">
+                                            <p class="text-sm font-medium text-fitness-600" data-bind="class.time">11:00 AM</p>
+                                            <h4 class="font-semibold text-gray-900" data-bind="class.name">Vinyasa Yoga</h4>
+                                            <p class="text-sm text-gray-600" data-bind="class.location">Studio B</p>
+                                        </div>
+                                        <div class="border-l-4 border-yellow-500 pl-4" data-mock="true">
+                                            <p class="text-sm font-medium text-yellow-600" data-bind="class.time">6:00 PM</p>
+                                            <h4 class="font-semibold text-gray-900" data-bind="class.name">Strength Training</h4>
+                                            <p class="text-sm text-gray-600" data-bind="class.location">Main Gym</p>
+                                        </div>
+                                    </div>
+                                    <!-- @END_MAP )) -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: Dashboard -->
+
+            <!-- ROUTINE BUILDER VIEW -->
+            <!-- @COMPONENT: RoutineBuilder [drag-and-drop routine creation interface] -->
+            <div id="routinesView" class="tab-content hidden">
+                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    <div class="mb-8 flex items-center justify-between">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Routine Builder</h1>
+                            <p class="text-gray-600 mt-1">Create and manage your workout routines</p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-print mr-2"></i>Print Preview
+                            </button>
+                            <button class="bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors">
+                                <i class="fas fa-save mr-2"></i>Save Routine
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Exercise Library -->
+                        <div class="lg:col-span-1">
+                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 h-fit">
+                                <div class="p-6 border-b border-gray-100">
+                                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Exercise Library</h2>
+                                    <div class="relative">
+                                        <input type="text" placeholder="Search exercises..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 mt-4">
+                                        <button class="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">All</button>
+                                        <button class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium hover:bg-gray-200">Cardio</button>
+                                        <button class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium hover:bg-gray-200">Strength</button>
+                                        <button class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium hover:bg-gray-200">Flexibility</button>
+                                    </div>
+                                </div>
+                                <div class="p-6 max-h-96 overflow-y-auto">
+                                    <!-- @MAP: exercises.map(exercise => ( -->
+                                    <div class="space-y-3">
+                                        <div class="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors draggable" draggable="true" data-mock="true">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                                    <i class="fas fa-running text-primary-600 text-sm"></i>
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <h4 class="font-medium text-gray-900 text-sm" data-bind="exercise.name">Burpees</h4>
+                                                    <p class="text-xs text-gray-600" data-bind="exercise.category">Cardio • Full Body</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors draggable" draggable="true" data-mock="true">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-fitness-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                                    <i class="fas fa-dumbbell text-fitness-600 text-sm"></i>
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <h4 class="font-medium text-gray-900 text-sm" data-bind="exercise.name">Push-ups</h4>
+                                                    <p class="text-xs text-gray-600" data-bind="exercise.category">Strength • Upper Body</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors draggable" draggable="true" data-mock="true">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                                    <i class="fas fa-square text-yellow-600 text-sm"></i>
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <h4 class="font-medium text-gray-900 text-sm" data-bind="exercise.name">Squats</h4>
+                                                    <p class="text-xs text-gray-600" data-bind="exercise.category">Strength • Lower Body</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors draggable" draggable="true" data-mock="true">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                                    <i class="fas fa-heart text-purple-600 text-sm"></i>
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <h4 class="font-medium text-gray-900 text-sm" data-bind="exercise.name">Jumping Jacks</h4>
+                                                    <p class="text-xs text-gray-600" data-bind="exercise.category">Cardio • Full Body</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors draggable" draggable="true" data-mock="true">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                                    <i class="fas fa-fire text-red-600 text-sm"></i>
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <h4 class="font-medium text-gray-900 text-sm" data-bind="exercise.name">Plank</h4>
+                                                    <p class="text-xs text-gray-600" data-bind="exercise.category">Strength • Core</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- @END_MAP )) -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Routine Builder -->
+                        <div class="lg:col-span-2">
+                            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                                <div class="p-6 border-b border-gray-100">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div>
+                                            <input type="text" value="New HIIT Routine" class="text-lg font-semibold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-primary-500 rounded px-2" data-bind="routine.name" data-mock="true">
+                                            <p class="text-sm text-gray-600">Total Duration: <span class="font-medium" data-bind="routine.totalDuration">0 minutes</span></p>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                                <option>HIIT</option>
+                                                <option>Yoga</option>
+                                                <option>Strength</option>
+                                                <option>Cardio</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="p-6">
+                                    <!-- Drop Zone -->
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center text-gray-500 mb-6 min-h-32 flex items-center justify-center drop-zone" data-implementation="Implement drag-and-drop functionality">
+                                        <div>
+                                            <i class="fas fa-plus-circle text-4xl mb-4"></i>
+                                            <p class="text-lg font-medium">Drag exercises here to build your routine</p>
+                                            <p class="text-sm mt-2">Or click to add exercises manually</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Routine Exercises Table -->
+                                    <div class="bg-gray-50 rounded-lg overflow-hidden">
+                                        <table class="w-full">
+                                            <thead class="bg-gray-100">
+                                                <tr>
+                                                    <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm">#</th>
+                                                    <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm">Exercise</th>
+                                                    <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm">Duration</th>
+                                                    <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm">Reps/Sets</th>
+                                                    <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm">Rest</th>
+                                                    <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm">Music</th>
+                                                    <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- @MAP: routineExercises.map(exercise => ( -->
+                                                <tr class="border-b border-gray-200 hover:bg-white transition-colors" data-mock="true">
+                                                    <td class="py-4 px-4 text-sm font-medium text-gray-900">1</td>
+                                                    <td class="py-4 px-4">
+                                                        <div class="flex items-center">
+                                                            <div class="w-8 h-8 bg-primary-100 rounded-md flex items-center justify-center mr-3">
+                                                                <i class="fas fa-running text-primary-600 text-xs"></i>
+                                                            </div>
+                                                            <span class="font-medium text-gray-900" data-bind="exercise.name">Burpees</span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-4 px-4">
+                                                        <input type="number" value="60" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm" data-bind="exercise.duration" data-mock="true">
+                                                        <span class="text-sm text-gray-600 ml-1">sec</span>
+                                                    </td>
+                                                    <td class="py-4 px-4">
+                                                        <div class="flex items-center space-x-2">
+                                                            <input type="number" value="15" class="w-12 border border-gray-300 rounded px-2 py-1 text-sm" data-bind="exercise.reps" data-mock="true">
+                                                            <span class="text-sm text-gray-600">x</span>
+                                                            <input type="number" value="3" class="w-12 border border-gray-300 rounded px-2 py-1 text-sm" data-bind="exercise.sets" data-mock="true">
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-4 px-4">
+                                                        <input type="number" value="30" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm" data-bind="exercise.rest" data-mock="true">
+                                                        <span class="text-sm text-gray-600 ml-1">sec</span>
+                                                    </td>
+                                                    <td class="py-4 px-4">
+                                                        <input type="text" placeholder="Song title - Artist" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" data-bind="exercise.music" data-mock="true">
+                                                    </td>
+                                                    <td class="py-4 px-4">
+                                                        <div class="flex items-center space-x-2">
+                                                            <button class="text-gray-400 hover:text-gray-600 p-1">
+                                                                <i class="fas fa-grip-vertical"></i>
+                                                            </button>
+                                                            <button class="text-red-400 hover:text-red-600 p-1">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <!-- @END_MAP )) -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: RoutineBuilder -->
+
+            <!-- EXERCISES VIEW -->
+            <!-- @COMPONENT: ExerciseDatabase [exercise library management] -->
+            <div id="exercisesView" class="tab-content hidden">
+                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    <div class="mb-8 flex items-center justify-between">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Exercise Database</h1>
+                            <p class="text-gray-600 mt-1">Browse and manage your exercise library</p>
+                        </div>
+                        <button class="bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Add Exercise
+                        </button>
+                    </div>
+
+                    <!-- Filters and Search -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                                <div class="relative">
+                                    <input type="text" placeholder="Search exercises..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                                <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                    <option>All Categories</option>
+                                    <option>Cardio</option>
+                                    <option>Strength</option>
+                                    <option>Flexibility</option>
+                                    <option>Balance</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
+                                <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                    <option>All Levels</option>
+                                    <option>Beginner</option>
+                                    <option>Intermediate</option>
+                                    <option>Advanced</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Equipment</label>
+                                <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                    <option>Any Equipment</option>
+                                    <option>No Equipment</option>
+                                    <option>Dumbbells</option>
+                                    <option>Resistance Bands</option>
+                                    <option>Mat</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exercise Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- @MAP: exercises.map(exercise => ( -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow" data-mock="true">
+                            <!-- Energetic group fitness class with people doing jumping exercises -->
+                            <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Exercise demonstration" class="w-full h-48 object-cover">
+                            <div class="p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900" data-bind="exercise.name">Burpees</h3>
+                                    <span class="px-2 py-1 bg-primary-100 text-primary-700 rounded-full text-xs font-medium" data-bind="exercise.difficulty">Intermediate</span>
+                                </div>
+                                <p class="text-gray-600 text-sm mb-4" data-bind="exercise.description">Full-body exercise combining squat, plank, and jump movements for maximum calorie burn.</p>
+                                <div class="flex items-center justify-between text-sm text-gray-500">
+                                    <span data-bind="exercise.category">Cardio</span>
+                                    <span data-bind="exercise.equipment">No Equipment</span>
+                                    <span data-bind="exercise.muscles">Full Body</span>
+                                </div>
+                                <div class="mt-4 flex space-x-2">
+                                    <button class="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                                        <i class="fas fa-edit mr-1"></i>Edit
+                                    </button>
+                                    <button class="flex-1 bg-primary-100 text-primary-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-primary-200 transition-colors">
+                                        <i class="fas fa-plus mr-1"></i>Add to Routine
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow" data-mock="true">
+                            <!-- Person doing push-ups in a modern gym environment -->
+                            <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Exercise demonstration" class="w-full h-48 object-cover">
+                            <div class="p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900" data-bind="exercise.name">Push-ups</h3>
+                                    <span class="px-2 py-1 bg-fitness-100 text-fitness-700 rounded-full text-xs font-medium" data-bind="exercise.difficulty">Beginner</span>
+                                </div>
+                                <p class="text-gray-600 text-sm mb-4" data-bind="exercise.description">Classic upper body strength exercise targeting chest, shoulders, and triceps.</p>
+                                <div class="flex items-center justify-between text-sm text-gray-500">
+                                    <span data-bind="exercise.category">Strength</span>
+                                    <span data-bind="exercise.equipment">No Equipment</span>
+                                    <span data-bind="exercise.muscles">Upper Body</span>
+                                </div>
+                                <div class="mt-4 flex space-x-2">
+                                    <button class="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                                        <i class="fas fa-edit mr-1"></i>Edit
+                                    </button>
+                                    <button class="flex-1 bg-primary-100 text-primary-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-primary-200 transition-colors">
+                                        <i class="fas fa-plus mr-1"></i>Add to Routine
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow" data-mock="true">
+                            <!-- Woman performing squats in a bright fitness studio -->
+                            <img src="https://images.unsplash.com/photo-1566241440091-ec10de8db2e1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=200" alt="Exercise demonstration" class="w-full h-48 object-cover">
+                            <div class="p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900" data-bind="exercise.name">Squats</h3>
+                                    <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium" data-bind="exercise.difficulty">Beginner</span>
+                                </div>
+                                <p class="text-gray-600 text-sm mb-4" data-bind="exercise.description">Fundamental lower body exercise targeting glutes, quadriceps, and hamstrings.</p>
+                                <div class="flex items-center justify-between text-sm text-gray-500">
+                                    <span data-bind="exercise.category">Strength</span>
+                                    <span data-bind="exercise.equipment">No Equipment</span>
+                                    <span data-bind="exercise.muscles">Lower Body</span>
+                                </div>
+                                <div class="mt-4 flex space-x-2">
+                                    <button class="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                                        <i class="fas fa-edit mr-1"></i>Edit
+                                    </button>
+                                    <button class="flex-1 bg-primary-100 text-primary-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-primary-200 transition-colors">
+                                        <i class="fas fa-plus mr-1"></i>Add to Routine
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: ExerciseDatabase -->
+
+            <!-- PRESENTATION MODE -->
+            <!-- @COMPONENT: PresentationMode [full-screen workout display] -->
+            <div id="presentationView" class="tab-content hidden">
+                <div class="min-h-screen bg-gray-900 text-white relative overflow-hidden">
+                    <!-- Background Pattern -->
+                    <div class="absolute inset-0 opacity-10">
+                        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, #3b82f6 0%, transparent 50%), radial-gradient(circle at 75% 75%, #059669 0%, transparent 50%);"></div>
+                    </div>
+                    
+                    <!-- Header -->
+                    <div class="relative z-10 flex items-center justify-between p-8 border-b border-gray-700">
+                        <div>
+                            <h1 class="text-3xl font-bold" data-bind="routine.name">HIIT Cardio Blast</h1>
+                            <p class="text-gray-300" data-bind="routine.description">45-minute high-intensity interval training</p>
+                        </div>
+                        <div class="flex items-center space-x-6">
+                            <div class="text-right">
+                                <p class="text-sm text-gray-400">Total Time</p>
+                                <p class="text-2xl font-bold" data-bind="routine.totalTime">45:00</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-400">Remaining</p>
+                                <p class="text-2xl font-bold text-primary-400" data-bind="routine.remainingTime">42:30</p>
+                            </div>
+                            <button class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-stop mr-2"></i>End Session
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="relative z-10 grid grid-cols-1 lg:grid-cols-4 gap-8 p-8 h-screen">
+                        <!-- Current Exercise -->
+                        <div class="lg:col-span-3 flex flex-col">
+                            <div class="bg-gray-800 rounded-2xl p-8 flex-1 flex flex-col justify-center">
+                                <div class="text-center">
+                                    <!-- @STATE: currentExercise:object -->
+                                    <div class="mb-8">
+                                        <h2 class="text-6xl font-bold mb-4" data-bind="currentExercise.name">Burpees</h2>
+                                        <p class="text-2xl text-gray-300" data-bind="currentExercise.description">Full-body explosive movement</p>
+                                    </div>
+                                    
+                                    <!-- Timer Circle -->
+                                    <div class="relative mx-auto w-64 h-64 mb-8">
+                                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                            <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="2" fill="none" class="text-gray-700"/>
+                                            <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="2" fill="none" class="text-primary-500" stroke-dasharray="283" stroke-dashoffset="85" stroke-linecap="round"/>
+                                        </svg>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <div class="text-center">
+                                                <div class="text-5xl font-bold" data-bind="currentExercise.timeRemaining">0:45</div>
+                                                <div class="text-lg text-gray-400">remaining</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Exercise Details -->
+                                    <div class="grid grid-cols-3 gap-8 max-w-md mx-auto">
+                                        <div class="text-center">
+                                            <p class="text-3xl font-bold text-primary-400" data-bind="currentExercise.reps">15</p>
+                                            <p class="text-gray-400">Reps</p>
+                                        </div>
+                                        <div class="text-center">
+                                            <p class="text-3xl font-bold text-fitness-400" data-bind="currentExercise.sets">3</p>
+                                            <p class="text-gray-400">Sets</p>
+                                        </div>
+                                        <div class="text-center">
+                                            <p class="text-3xl font-bold text-yellow-400" data-bind="currentExercise.rest">30s</p>
+                                            <p class="text-gray-400">Rest</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Controls -->
+                            <div class="flex items-center justify-center space-x-4 mt-8">
+                                <button class="bg-gray-700 hover:bg-gray-600 p-4 rounded-full transition-colors">
+                                    <i class="fas fa-backward text-xl"></i>
+                                </button>
+                                <button class="bg-primary-600 hover:bg-primary-700 p-6 rounded-full transition-colors">
+                                    <i class="fas fa-pause text-2xl"></i>
+                                </button>
+                                <button class="bg-gray-700 hover:bg-gray-600 p-4 rounded-full transition-colors">
+                                    <i class="fas fa-forward text-xl"></i>
+                                </button>
+                                <button class="bg-yellow-600 hover:bg-yellow-700 px-6 py-4 rounded-full transition-colors">
+                                    <i class="fas fa-plus mr-2"></i>+30s
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Exercises -->
+                        <div class="lg:col-span-1">
+                            <div class="bg-gray-800 rounded-2xl p-6 h-full">
+                                <h3 class="text-xl font-semibold mb-6 text-center">Up Next</h3>
+                                <!-- @MAP: upcomingExercises.map(exercise => ( -->
+                                <div class="space-y-4">
+                                    <div class="bg-gray-700 rounded-lg p-4" data-mock="true">
+                                        <div class="flex items-center mb-2">
+                                            <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-dumbbell text-sm"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium" data-bind="exercise.name">Push-ups</h4>
+                                                <p class="text-sm text-gray-400" data-bind="exercise.duration">60s</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-400" data-bind="exercise.music">Eye of the Tiger - Survivor</p>
+                                    </div>
+                                    <div class="bg-gray-700 rounded-lg p-4" data-mock="true">
+                                        <div class="flex items-center mb-2">
+                                            <div class="w-8 h-8 bg-fitness-600 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-square text-sm"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium" data-bind="exercise.name">Squats</h4>
+                                                <p class="text-sm text-gray-400" data-bind="exercise.duration">45s</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-400" data-bind="exercise.music">Pump It - Black Eyed Peas</p>
+                                    </div>
+                                    <div class="bg-gray-700 rounded-lg p-4" data-mock="true">
+                                        <div class="flex items-center mb-2">
+                                            <div class="w-8 h-8 bg-yellow-600 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-fire text-sm"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium" data-bind="exercise.name">Plank</h4>
+                                                <p class="text-sm text-gray-400" data-bind="exercise.duration">30s</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-400" data-bind="exercise.music">Stronger - Kelly Clarkson</p>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+
+                                <!-- Progress Bar -->
+                                <div class="mt-8">
+                                    <div class="flex justify-between text-sm text-gray-400 mb-2">
+                                        <span>Exercise 2 of 12</span>
+                                        <span>17%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-700 rounded-full h-2">
+                                        <div class="bg-primary-500 h-2 rounded-full" style="width: 17%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: PresentationMode -->
+
+        </div>
+        <!-- @END_COMPONENT: MainApp -->
+
+    </div>
+    <!-- @END_COMPONENT: App -->
+
+    <script>
+    // TODO: Implement business logic, API calls, or state management
+    
+    (function() {
+        // Tab switching functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const navTabs = document.querySelectorAll('.nav-tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            navTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetTab = this.dataset.tab;
+                    
+                    // Update active nav tab
+                    navTabs.forEach(t => {
+                        t.classList.remove('active', 'bg-primary-50', 'text-primary-700');
+                        t.classList.add('text-gray-500', 'hover:text-gray-700');
+                    });
+                    this.classList.add('active', 'bg-primary-50', 'text-primary-700');
+                    this.classList.remove('text-gray-500', 'hover:text-gray-700');
+                    
+                    // Show target content
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                        content.classList.remove('active');
+                    });
+                    
+                    const targetContent = document.getElementById(targetTab + 'View');
+                    if (targetContent) {
+                        targetContent.classList.remove('hidden');
+                        targetContent.classList.add('active');
+                    }
+                });
+            });
+            
+            // Login simulation
+            const loginForm = document.querySelector('form[data-event="submit:handleLogin"]');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    // Simulate login process
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                });
+            }
+            
+            // Drag and drop simulation for routine builder
+            const draggableElements = document.querySelectorAll('.draggable');
+            const dropZone = document.querySelector('.drop-zone');
+            
+            draggableElements.forEach(element => {
+                element.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('text/plain', '');
+                    this.style.opacity = '0.5';
+                });
+                
+                element.addEventListener('dragend', function(e) {
+                    this.style.opacity = '1';
+                });
+            });
+            
+            if (dropZone) {
+                dropZone.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('border-primary-500', 'bg-primary-50');
+                });
+                
+                dropZone.addEventListener('dragleave', function(e) {
+                    this.classList.remove('border-primary-500', 'bg-primary-50');
+                });
+                
+                dropZone.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('border-primary-500', 'bg-primary-50');
+                    // TODO: Add exercise to routine
+                    console.log('Exercise dropped in routine builder');
+                });
+            }
+            
+            // Presentation mode timer simulation
+            let timerInterval;
+            let timeRemaining = 45;
+            
+            function updateTimer() {
+                const timerElement = document.querySelector('[data-bind="currentExercise.timeRemaining"]');
+                if (timerElement) {
+                    const minutes = Math.floor(timeRemaining / 60);
+                    const seconds = timeRemaining % 60;
+                    timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    if (timeRemaining > 0) {
+                        timeRemaining--;
+                    } else {
+                        clearInterval(timerInterval);
+                        // TODO: Move to next exercise
+                    }
+                }
+            }
+            
+            // Auto-start timer when in presentation mode
+            const presentationTab = document.querySelector('[data-tab="presentation"]');
+            if (presentationTab) {
+                presentationTab.addEventListener('click', function() {
+                    setTimeout(() => {
+                        timerInterval = setInterval(updateTimer, 1000);
+                    }, 1000);
+                });
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

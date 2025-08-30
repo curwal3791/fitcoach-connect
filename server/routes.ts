@@ -125,8 +125,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cleanup duplicate class types endpoint
-  app.post('/api/cleanup-duplicate-class-types', async (req, res) => {
+  // Debug endpoint to see actual class types (no auth for testing)
+  app.get('/api/debug-class-types', async (req: any, res) => {
+    try {
+      // Get all class types without user filter for debugging
+      const allClassTypes = await storage.getClassTypes();
+      
+      // Group by name to see duplicates
+      const byName = new Map();
+      allClassTypes.forEach(ct => {
+        const name = ct.name.toLowerCase().trim();
+        if (!byName.has(name)) byName.set(name, []);
+        byName.get(name).push(ct);
+      });
+      
+      const duplicates = Array.from(byName.entries())
+        .filter(([_, types]) => types.length > 1)
+        .map(([name, types]) => ({ name, count: types.length, types }));
+      
+      res.json({
+        totalClassTypes: allClassTypes.length,
+        uniqueNames: byName.size,
+        duplicateNames: duplicates.length,
+        duplicates,
+        allClassTypes: allClassTypes.map(ct => ({ id: ct.id, name: ct.name, isDefault: ct.isDefault, createdAt: ct.createdAt }))
+      });
+    } catch (error) {
+      console.error("Debug error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Simple cleanup endpoint (no auth for testing)
+  app.post('/api/cleanup-duplicate-class-types-simple', async (req, res) => {
+    try {
+      console.log("Starting SIMPLE duplicate class types cleanup...");
+      
+      // Set explicit headers to ensure JSON response
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache');
+      
+      const result = await storage.simpleCleanupDuplicateClassTypes();
+      
+      console.log("Simple cleanup completed:", result);
+      
+      res.json({
+        message: "Simple duplicate class types cleanup completed",
+        duplicatesFound: result.duplicatesFound,
+        duplicatesRemoved: result.duplicatesRemoved,
+        report: result.report,
+        errors: result.errors || []
+      });
+    } catch (error) {
+      console.error("Error in simple cleanup:", error);
+      res.status(500).json({ 
+        message: "Failed to cleanup duplicates", 
+        error: error.message,
+        stack: error.stack 
+      });
+    }
+  });
+
+  // Original cleanup endpoint (with auth)
+  app.post('/api/cleanup-duplicate-class-types', isAuthenticated, async (req, res) => {
     try {
       console.log("Starting duplicate class types cleanup...");
       

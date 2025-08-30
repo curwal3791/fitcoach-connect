@@ -1852,43 +1852,63 @@ export class DatabaseStorage implements IStorage {
         .groupBy(classTypes.name)
         .having(sql`count(*) > 1`);
       
-      duplicatesFound = duplicateGroups.length;
-      report.push(`Found ${duplicatesFound} class types with duplicates`);
+      // Calculate total duplicates (not just groups)
+      let totalDuplicates = 0;
+      for (const group of duplicateGroups) {
+        totalDuplicates += group.count - 1; // subtract 1 to keep the original
+      }
+      
+      duplicatesFound = totalDuplicates;
+      report.push(`Found ${duplicateGroups.length} class type names with ${totalDuplicates} total duplicates`);
       
       for (const group of duplicateGroups) {
         const [keepId, ...duplicateIds] = group.ids;
         report.push(`Processing ${group.name}: keeping ${keepId}, removing ${duplicateIds.length} duplicates`);
+        console.log(`DEBUG: Group ${group.name} - Keep: ${keepId}, Remove: ${JSON.stringify(duplicateIds)}`);
         
-        // Move exercises from duplicates to the keeper
-        await db
-          .update(exercises)
-          .set({ classTypeId: keepId })
-          .where(sql`${exercises.classTypeId} = ANY(${duplicateIds})`);
-        
-        // Move calendar events from duplicates to the keeper  
-        await db
-          .update(calendarEvents)
-          .set({ classTypeId: keepId })
-          .where(sql`${calendarEvents.classTypeId} = ANY(${duplicateIds})`);
-        
-        // Move routines from duplicates to the keeper
-        await db
-          .update(routines)
-          .set({ classTypeId: keepId })
-          .where(sql`${routines.classTypeId} = ANY(${duplicateIds})`);
-        
-        // Move programs from duplicates to the keeper
-        await db
-          .update(programs)
-          .set({ classTypeId: keepId })
-          .where(sql`${programs.classTypeId} = ANY(${duplicateIds})`);
-        
-        // Delete the duplicate class types
-        await db
-          .delete(classTypes)
-          .where(sql`${classTypes.id} = ANY(${duplicateIds})`);
-        
-        duplicatesRemoved += duplicateIds.length;
+        // Move data from duplicate class types to the keeper
+        for (const duplicateId of duplicateIds) {
+          try {
+            console.log(`DEBUG: Processing duplicate ID: ${duplicateId}`);
+            
+            // Move exercises
+            await db
+              .update(exercises)
+              .set({ classTypeId: keepId })
+              .where(eq(exercises.classTypeId, duplicateId));
+            
+            // Move calendar events
+            await db
+              .update(calendarEvents)
+              .set({ classTypeId: keepId })
+              .where(eq(calendarEvents.classTypeId, duplicateId));
+            
+            // Move routines
+            await db
+              .update(routines)
+              .set({ classTypeId: keepId })
+              .where(eq(routines.classTypeId, duplicateId));
+            
+            // Move programs
+            await db
+              .update(programs)
+              .set({ classTypeId: keepId })
+              .where(eq(programs.classTypeId, duplicateId));
+            
+            // Delete the duplicate class type
+            const deleteResult = await db
+              .delete(classTypes)
+              .where(eq(classTypes.id, duplicateId))
+              .returning();
+            
+            console.log(`DEBUG: Delete result for ${duplicateId}:`, deleteResult);
+            duplicatesRemoved++;
+            
+          } catch (error) {
+            console.error(`ERROR: Failed to process duplicate ${duplicateId}:`, error);
+            report.push(`❌ Failed to remove duplicate ${duplicateId}: ${error}`);
+          }
+        }
         report.push(`- Consolidated ${group.name}: moved data and removed ${duplicateIds.length} duplicates`);
       }
       
@@ -1903,6 +1923,122 @@ export class DatabaseStorage implements IStorage {
       report,
       duplicatesFound,
       duplicatesRemoved
+    };
+  }
+
+  // Simple cleanup method that just deletes duplicates without moving data
+  async simpleCleanupDuplicateClassTypes(): Promise<{ 
+    report: string[], 
+    duplicatesFound: number, 
+    duplicatesRemoved: number,
+    errors: string[]
+  }> {
+    const report: string[] = [];
+    const errors: string[] = [];
+    let duplicatesRemoved = 0;
+    let duplicatesFound = 0;
+    
+    try {
+      report.push("🔍 Starting simple duplicate cleanup...");
+      
+      // Get ALL class types (no user filter) to see everything
+      const allClassTypes = await db.select().from(classTypes);
+      report.push(`📊 Found ${allClassTypes.length} total class types in database`);
+      
+      // Group by exact name match (case-insensitive)
+      const duplicateGroups = new Map<string, typeof allClassTypes>();
+      
+      for (const classType of allClassTypes) {
+        const normalizedName = classType.name.toLowerCase().trim();
+        if (!duplicateGroups.has(normalizedName)) {
+          duplicateGroups.set(normalizedName, []);
+        }
+        duplicateGroups.get(normalizedName)!.push(classType);
+      }
+      
+      // Find groups with duplicates
+      const duplicateGroupsArray = Array.from(duplicateGroups.entries())
+        .filter(([_, types]) => types.length > 1);
+      
+      report.push(`🎯 Found ${duplicateGroupsArray.length} class type names with duplicates`);
+      
+      for (const [name, types] of duplicateGroupsArray) {
+        duplicatesFound += types.length - 1; // Don't count the original
+        
+        // Keep the first one (oldest), delete the rest
+        const [keepType, ...deleteTypes] = types.sort((a, b) => 
+          new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+        );
+        
+        report.push(`📝 Processing "${name}": keeping ${keepType.id}, deleting ${deleteTypes.length} duplicates`);
+        
+        // Delete each duplicate one by one with detailed error handling
+        for (const deleteType of deleteTypes) {
+          try {
+            console.log(`🗑️ Attempting to delete class type: ${deleteType.id} (${deleteType.name})`);
+            
+            // First check what references this class type
+            const exerciseRefs = await db.select().from(exercises).where(eq(exercises.classTypeId, deleteType.id));
+            const routineRefs = await db.select().from(routines).where(eq(routines.classTypeId, deleteType.id));
+            const eventRefs = await db.select().from(calendarEvents).where(eq(calendarEvents.classTypeId, deleteType.id));
+            
+            if (exerciseRefs.length > 0) {
+              report.push(`⚠️ ${deleteType.name} has ${exerciseRefs.length} exercises - moving to ${keepType.id}`);
+              await db.update(exercises)
+                .set({ classTypeId: keepType.id })
+                .where(eq(exercises.classTypeId, deleteType.id));
+            }
+            
+            if (routineRefs.length > 0) {
+              report.push(`⚠️ ${deleteType.name} has ${routineRefs.length} routines - moving to ${keepType.id}`);
+              await db.update(routines)
+                .set({ classTypeId: keepType.id })
+                .where(eq(routines.classTypeId, deleteType.id));
+            }
+            
+            if (eventRefs.length > 0) {
+              report.push(`⚠️ ${deleteType.name} has ${eventRefs.length} events - moving to ${keepType.id}`);
+              await db.update(calendarEvents)
+                .set({ classTypeId: keepType.id })
+                .where(eq(calendarEvents.classTypeId, deleteType.id));
+            }
+            
+            // Now delete the duplicate
+            const deleteResult = await db
+              .delete(classTypes)
+              .where(eq(classTypes.id, deleteType.id))
+              .returning();
+            
+            if (deleteResult.length > 0) {
+              duplicatesRemoved++;
+              report.push(`✅ Successfully deleted duplicate: ${deleteType.name} (${deleteType.id})`);
+            } else {
+              errors.push(`❌ Delete returned 0 rows for ${deleteType.name} (${deleteType.id})`);
+            }
+            
+          } catch (deleteError: any) {
+            const errorMsg = `❌ Failed to delete ${deleteType.name} (${deleteType.id}): ${deleteError.message}`;
+            errors.push(errorMsg);
+            report.push(errorMsg);
+            console.error("Delete error:", deleteError);
+          }
+        }
+      }
+      
+      report.push(`🎉 Simple cleanup completed! Found ${duplicatesFound} duplicates, removed ${duplicatesRemoved}`);
+      
+    } catch (error: any) {
+      const errorMsg = `💥 Fatal error during simple cleanup: ${error.message}`;
+      errors.push(errorMsg);
+      report.push(errorMsg);
+      console.error('Simple cleanup fatal error:', error);
+    }
+    
+    return {
+      report,
+      duplicatesFound,
+      duplicatesRemoved,
+      errors
     };
   }
 }

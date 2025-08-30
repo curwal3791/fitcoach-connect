@@ -376,16 +376,43 @@ export default function Classes() {
             Create and manage different types of fitness classes. Each class type can have multiple routines.
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen || !!editingClass} onOpenChange={(open) => {
-          if (!open) handleCloseDialog();
-          else setIsCreateDialogOpen(true);
-        }}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2" data-testid="button-create-class">
-              <Plus className="w-4 h-4" />
-              Create Class Type
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2" 
+            onClick={() => {
+              const duplicatesByName = new Map();
+              classTypes.forEach(ct => {
+                const key = ct.name.toLowerCase().trim();
+                if (!duplicatesByName.has(key)) {
+                  duplicatesByName.set(key, []);
+                }
+                duplicatesByName.get(key).push(ct);
+              });
+              
+              const duplicates = Array.from(duplicatesByName.values())
+                .filter(group => group.length > 1)
+                .flat();
+              
+              if (duplicates.length > 0) {
+                alert(`Found ${duplicates.length} duplicate class types! This explains why you see duplicates on the deployed site. Click OK and then use the dashboard cleanup button.`);
+              } else {
+                alert('No duplicates found in current data.');
+              }
+            }}
+          >
+            Check Duplicates
+          </Button>
+          <Dialog open={isCreateDialogOpen || !!editingClass} onOpenChange={(open) => {
+            if (!open) handleCloseDialog();
+            else setIsCreateDialogOpen(true);
+          }}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2" data-testid="button-create-class">
+                <Plus className="w-4 h-4" />
+                Create Class Type
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle data-testid="text-dialog-title">
@@ -460,6 +487,7 @@ export default function Classes() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Search and Filter Controls */}
