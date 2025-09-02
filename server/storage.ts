@@ -1774,12 +1774,22 @@ export class DatabaseStorage implements IStorage {
       },
     ];
 
-    // Create class types first (faster batch operation)
-    console.log(`Creating ${defaultClassTypes.length} default class types for user: ${userId}`);
+    // Create only missing class types
+    console.log(`Checking which of ${defaultClassTypes.length} default class types need to be created for user: ${userId}`);
     const createdClassTypes = [];
     
     for (const classTypeData of defaultClassTypes) {
       try {
+        // Check if this class type already exists for this user
+        const existingClassType = existingClassTypes.find(ct => 
+          ct.name.toLowerCase() === classTypeData.name.toLowerCase()
+        );
+        
+        if (existingClassType) {
+          console.log(`Class type ${classTypeData.name} already exists for user: ${userId}, skipping`);
+          continue;
+        }
+        
         console.log(`Creating class type: ${classTypeData.name} for user: ${userId}`);
         const classType = await this.createClassType(classTypeData);
         createdClassTypes.push(classType);

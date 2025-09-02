@@ -38,11 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
     
-    // Seed default data for existing users (non-blocking)
-    console.log(`Checking/seeding default data for existing user: ${user.id}`);
-    storage.seedDefaultData(user.id).catch(error => {
-      console.error(`Error seeding default data for user ${user.id}:`, error);
-    });
+    // Note: Default data seeding is handled during user registration only
     
     // Generate JWT token
     const token = generateToken(user.id);

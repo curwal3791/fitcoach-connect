@@ -217,13 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // req.user is already the full user object from our auth middleware
       const user = req.user;
       
-      // Seed default data for new users (non-blocking)
-      console.log(`Checking/seeding default data for user: ${user.id}`);
-      storage.seedDefaultData(user.id).then(() => {
-        console.log(`Default data seeding completed for user: ${user.id}`);
-      }).catch(error => {
-        console.error("Error seeding default data:", error);
-      });
+      // Note: Default data seeding is handled during user registration only
       
       res.json({
         id: user.id,

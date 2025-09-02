@@ -173,13 +173,7 @@ export async function setupAuth(app: Express) {
       // Create session
       (req.session as any).userId = user.id;
       
-      // Seed default data for existing users (non-blocking, critical for production)
-      console.log(`Checking/seeding default data for existing user: ${user.id}`);
-      storage.seedDefaultData(user.id).then(() => {
-        console.log(`Default data seeding check completed for user: ${user.id}`);
-      }).catch(error => {
-        console.error(`Error seeding default data for user ${user.id}:`, error);
-      });
+      // Note: Default data seeding is handled during user registration only
       
       // Generate JWT token
       const token = generateToken(user.id);
