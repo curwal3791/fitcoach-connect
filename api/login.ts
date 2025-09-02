@@ -1,13 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { storage } from '../server/storage.js';
-import { verifyPassword, generateToken } from '../server/emailAuth.js';
-import { loginSchema } from '../shared/schema.js';
+import { storage } from '../server/storage';
+import { verifyPassword, generateToken } from '../server/emailAuth';
+import { loginSchema } from '../shared/schema';
 import { z } from 'zod';
 
-// Load environment variables
-if (!process.env.DATABASE_URL) {
-  require('dotenv').config();
-}
+// Note: Environment variables are handled by Vercel automatically
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
